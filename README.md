@@ -1,4 +1,4 @@
-# Music Studio Site
+# onewaystu
 
 One-page brutalist website for a music studio: four hero photos, pricing, and hours. Nothing else.
 

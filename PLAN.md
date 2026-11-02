@@ -1,4 +1,4 @@
-# Plan: Music Studio One-Pager
+# Plan: onewaystu (Music Studio One-Pager)
 
 ## Goal
 A single-page, brutalist website for a music studio that shows the space (4 photos), what it costs, and when it's open.
