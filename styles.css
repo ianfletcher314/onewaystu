@@ -52,7 +52,25 @@ figure { position:relative; overflow:hidden; }
 figure .reveal { position:absolute; inset:0; width:100%; height:100%; aspect-ratio:auto; }
 figure .arrow { position:absolute; top:50%; height:auto; transform:translateY(-50%); pointer-events:none; }
 
-/* Scroll beat toggle */
-.sound-ui { position:fixed; right:16px; bottom:16px; z-index:10; display:flex; gap:8px; }
+/* Scroll beat toggle + sampler */
+.sound-ui { position:fixed; right:16px; bottom:16px; z-index:10; display:flex; flex-direction:column; align-items:flex-end; gap:8px; max-width:calc(100vw - 32px); }
+.sound-row { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
 .sound-toggle { font:inherit; font-weight:700; text-transform:uppercase; background:var(--paper); color:var(--ink); border:var(--b); padding:.4rem .75rem; cursor:pointer; }
-.sound-toggle:hover, .sound-toggle:focus-visible, .sound-toggle[aria-pressed="true"] { background:var(--ink); color:var(--paper); outline:2px solid var(--paper); outline-offset:-6px; }
+.sound-toggle:hover, .sound-toggle:focus-visible, .sound-toggle[aria-pressed="true"], .sound-toggle[aria-expanded="true"] { background:var(--ink); color:var(--paper); outline:2px solid var(--paper); outline-offset:-6px; }
+.sampler { background:var(--paper); border:var(--b); padding:10px; width:min(640px, calc(100vw - 32px)); max-height:70vh; overflow:auto; font-size:12px; }
+.sampler[hidden] { display:none; }
+.sampler-bar { display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:8px; }
+.sbtn { font:inherit; font-weight:700; text-transform:uppercase; border:2px solid var(--ink); background:var(--paper); color:var(--ink); padding:2px 8px; cursor:pointer; }
+.sbtn:hover, .sbtn:focus-visible, .sbtn[aria-pressed="true"] { background:var(--ink); color:var(--paper); }
+.sgrid { min-width:440px; }
+.srow { display:grid; grid-template-columns:64px repeat(16, 1fr); gap:2px; margin-bottom:2px; align-items:center; }
+.slabel { font-weight:700; font-size:11px; }
+.pad { height:22px; padding:0; border:2px solid var(--ink); background:var(--paper); cursor:pointer; }
+.pad.beat { margin-left:4px; }
+.pad.on { background:var(--ink); }
+.pad.now { background:#bbb; }
+.pad.on.now { background:#555; }
+.sampler-ctrl { display:flex; flex-wrap:wrap; gap:8px 16px; margin-top:8px; }
+.sampler-ctrl label { display:flex; gap:6px; align-items:center; font-weight:700; }
+.sampler-ctrl input[type="range"] { width:100px; accent-color:var(--ink); }
+.sampler-ctrl select { font:inherit; border:2px solid var(--ink); background:var(--paper); }

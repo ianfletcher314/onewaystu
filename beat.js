@@ -96,51 +96,165 @@
       if (s in mel) cowbell(c, out, at(1.6, 8) + 0.006, mel[s], vel(0.28));   // cowbell wanders the most
     } },
   };
-  const ORDER = ["rock", "trap", "phonk"];
+  // ---- sampler: build-your-own pattern (one bar of 16 steps) ----
+  const BASS808 = curve(5);
+  const cfg = { bpm: 130, swing: 0, wonk: 0, note: 29 };          // swing / wonk are 0..1
+  const V = {
+    kick:  (c, o, t, b) => { tone(c, o, t, { f0: 150, f1: 55, drop: 0.05, peak: 1, dur: 0.3, shaper: SOFT });
+                             burst(c, o, t, b, { type: "lowpass", freq: 3200, peak: 0.38, dur: 0.012 }); },
+    bass:  (c, o, t) => tone(c, o, t, { f0: hz(cfg.note) * 2, f1: hz(cfg.note), drop: 0.07, peak: 0.85, dur: 0.55, shaper: BASS808 }),
+    snare: (c, o, t, b) => { burst(c, o, t, b, { type: "bandpass", freq: 2200, q: 0.6, peak: 0.85, dur: 0.17 });
+                             tone(c, o, t, { type: "triangle", f0: 200, f1: 130, drop: 0.08, peak: 0.5, dur: 0.12 }); },
+    clap:  (c, o, t, b) => clap(c, o, t, b),
+    hat:   (c, o, t, b) => hat(c, o, t, b, false),
+    ohat:  (c, o, t, b) => hat(c, o, t, b, true),
+    cowlo: (c, o, t) => cowbell(c, o, t, 77, 0.28),
+    cowhi: (c, o, t) => cowbell(c, o, t, 80, 0.28),
+    tom:   (c, o, t) => tone(c, o, t, { f0: 115, f1: 85, drop: 0.06, peak: 0.5, dur: 0.12 }),
+  };
+  const ROWS = [["kick", "KICK"], ["bass", "808"], ["snare", "SNARE"], ["clap", "CLAP"], ["hat", "HAT"],
+                ["ohat", "OPEN HAT"], ["cowlo", "COW LO"], ["cowhi", "COW HI"], ["tom", "TOM"]];
+  const NOTES = [[26, "D1"], [28, "E1"], [29, "F1"], [31, "G1"], [33, "A1"], [36, "C2"]];
+  const evens = [0, 2, 4, 6, 8, 10, 12, 14], all = [...Array(16).keys()];
+  const PRESETS = {
+    ROCK:  { bpm: 120, swing: 0,   wonk: 0.1, note: 28, rows: { kick: [0, 8, 10], snare: [4, 12], hat: evens, ohat: [14], bass: evens } },
+    "808": { bpm: 140, swing: 0.1, wonk: 0,   note: 29, rows: { kick: [0, 6, 10], clap: [8], hat: evens, bass: [0, 6, 10] } },
+    PHONK: { bpm: 130, swing: 0.3, wonk: 0.7, note: 29, rows: { kick: [0, 8], snare: [3, 6, 14], hat: all, bass: [0, 8, 12],
+                                                                cowlo: [0, 8], cowhi: [3, 6, 11], tom: [2, 7, 10, 15] } },
+  };
+  const FEEL = [0, 14, -6, 24, 4, -8, 20, 10, 0, 18, -10, 28, 6, -5, 22, 12];       // ms push/pull per 16th at WONK = 1
+  const grid = {}; ROWS.forEach(([id]) => { grid[id] = new Array(16).fill(false); });
+
+  STYLES.custom = { get bpm() { return cfg.bpm; }, label: "CUSTOM", play(c, out, buf, bar, s, t) {
+    const ST = 60 / cfg.bpm / 4, odd = s % 2 === 1;
+    const at = k => Math.max(t + (odd ? ST * 0.33 * cfg.swing : 0) + (FEEL[s] + (Math.random() * 2 - 1) * 8) * cfg.wonk * k / 1000, c.currentTime);
+    ROWS.forEach(([id]) => { if (grid[id][s]) V[id](c, out, at(id === "bass" ? 0.3 : 1), buf); });
+  } };
+  const ORDER = ["rock", "trap", "phonk", "custom"];
+
+  const save = () => { try { localStorage.setItem("owsu-pattern", JSON.stringify({ grid, cfg })); } catch (e) {} };
+  let hadSaved = false;
+  try { const d = JSON.parse(localStorage.getItem("owsu-pattern"));
+    if (d && d.grid) { hadSaved = true; ROWS.forEach(([id]) => { if (Array.isArray(d.grid[id])) grid[id] = d.grid[id].slice(0, 16).map(Boolean); }); Object.assign(cfg, d.cfg); }
+  } catch (e) {}
 
   // ---- UI ----
   const ui = document.createElement("div"); ui.className = "sound-ui";
-  const mk = txt => { const b = document.createElement("button"); b.className = "sound-toggle"; b.type = "button"; b.textContent = txt; ui.appendChild(b); return b; };
-  const btn = mk("SOUND: OFF"), styleBtn = mk("BEAT: ROCK");
-  btn.setAttribute("aria-pressed", "false"); document.body.appendChild(ui);
+  const panel = document.createElement("div"); panel.className = "sampler"; panel.hidden = true;
+  const row = document.createElement("div"); row.className = "sound-row";
+  ui.append(panel, row); document.body.appendChild(ui);
+  const mk = txt => { const b = document.createElement("button"); b.className = "sound-toggle"; b.type = "button"; b.textContent = txt; row.appendChild(b); return b; };
+  const btn = mk("SOUND: OFF"), styleBtn = mk("BEAT: ROCK"), buildBtn = mk("BUILD");
+  btn.setAttribute("aria-pressed", "false"); buildBtn.setAttribute("aria-expanded", "false");
+
+  panel.innerHTML =
+    '<div class="sampler-bar"><button type="button" class="sbtn" data-act="play" aria-pressed="false">&#9654; PLAY</button>' +
+    '<button type="button" class="sbtn" data-act="clear">CLEAR</button><span class="slabel">LOAD:</span>' +
+    Object.keys(PRESETS).map(k => '<button type="button" class="sbtn" data-preset="' + k + '">' + k + '</button>').join("") + '</div>' +
+    '<div class="sgrid">' + ROWS.map(([id, label]) => '<div class="srow"><span class="slabel">' + label + '</span>' +
+      all.map(n => '<button type="button" class="pad' + (n % 4 === 0 ? ' beat' : '') + '" data-r="' + id + '" data-s="' + n + '" aria-label="' + label + ' step ' + (n + 1) + '" aria-pressed="false"></button>').join("") + '</div>').join("") + '</div>' +
+    '<div class="sampler-ctrl">' +
+    '<label>TEMPO <input type="range" min="80" max="180" data-k="bpm"><output data-o="bpm"></output></label>' +
+    '<label>SWING <input type="range" min="0" max="100" data-k="swing"><output data-o="swing"></output></label>' +
+    '<label>WONK <input type="range" min="0" max="100" data-k="wonk"><output data-o="wonk"></output></label>' +
+    '<label>808 NOTE <select data-k="note">' + NOTES.map(([m, n]) => '<option value="' + m + '">' + n + '</option>').join("") + '</select></label></div>';
+
+  const playBtn = panel.querySelector('[data-act="play"]');
+  const pct = k => Math.round(cfg[k] * 100);
+  function paint() {
+    panel.querySelectorAll(".pad").forEach(p => { const on_ = grid[p.dataset.r][+p.dataset.s]; p.classList.toggle("on", on_); p.setAttribute("aria-pressed", String(on_)); });
+    panel.querySelector('[data-k="bpm"]').value = cfg.bpm;       panel.querySelector('[data-o="bpm"]').textContent = cfg.bpm;
+    panel.querySelector('[data-k="swing"]').value = pct("swing"); panel.querySelector('[data-o="swing"]').textContent = pct("swing") + "%";
+    panel.querySelector('[data-k="wonk"]').value = pct("wonk");   panel.querySelector('[data-o="wonk"]').textContent = pct("wonk") + "%";
+    panel.querySelector('[data-k="note"]').value = cfg.note;
+  }
+  function applyPreset(p) {
+    ROWS.forEach(([id]) => { grid[id] = all.map(n => (p.rows[id] || []).includes(n)); });
+    cfg.bpm = p.bpm; cfg.swing = p.swing; cfg.wonk = p.wonk; cfg.note = p.note;
+    paint(); save();
+  }
+  if (!hadSaved) applyPreset(PRESETS["808"]); else paint();
 
   // ---- engine ----
-  let ctx, master, buf, timer, nextTime = 0, step = 0, on = false, idleT, styleName = "rock";
+  let ctx, master, buf, timer = null, nextTime = 0, step = 0, on = false, previewing = false, idleT, raf = 0;
+  let styleName = "rock"; const queue = [];
   const stepLen = () => 60 / STYLES[styleName].bpm / 4;
+  const running = () => on || previewing;
 
   function tick() {
     while (nextTime < ctx.currentTime + 0.12) {
-      STYLES[styleName].play(ctx, master, buf, Math.floor(step / 16) % 2, step % 16, nextTime);
+      const s = step % 16;
+      STYLES[styleName].play(ctx, master, buf, Math.floor(step / 16) % 2, s, nextTime);
+      if (styleName === "custom" && !panel.hidden) queue.push([nextTime, s]);
       nextTime += stepLen(); step = (step + 1) % 32;
     }
   }
-  function start() {
-    if (!ctx) {
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const comp = ctx.createDynamicsCompressor();
-      master = ctx.createGain(); master.gain.value = 0; master.connect(comp); comp.connect(ctx.destination);
-      buf = noiseBuf(ctx);
-    }
-    ctx.resume(); nextTime = ctx.currentTime + 0.05; step = 0;
-    clearInterval(timer); timer = setInterval(tick, 25);
+  function ensure() {
+    if (ctx) return;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const comp = ctx.createDynamicsCompressor();
+    master = ctx.createGain(); master.gain.value = 0; master.connect(comp); comp.connect(ctx.destination);
+    buf = noiseBuf(ctx);
   }
-  function stop() { clearInterval(timer); clearTimeout(idleT); if (master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.05); }
+  function setHead(n) { panel.querySelectorAll(".pad.now").forEach(p => p.classList.remove("now"));
+    if (n >= 0) panel.querySelectorAll('.pad[data-s="' + n + '"]').forEach(p => p.classList.add("now")); }
+  function frame() {
+    raf = 0; if (panel.hidden || !ctx || !timer) return;
+    let cur = -1; while (queue.length && queue[0][0] <= ctx.currentTime) cur = queue.shift()[1];
+    if (cur >= 0) setHead(cur);
+    raf = requestAnimationFrame(frame);
+  }
+  const kickFrame = () => { if (!raf && !panel.hidden) raf = requestAnimationFrame(frame); };
+  function begin() {
+    ensure(); ctx.resume();
+    if (!timer) { nextTime = ctx.currentTime + 0.05; step = 0; timer = setInterval(tick, 25); }
+    kickFrame();
+  }
+  function halt() { clearInterval(timer); timer = null; clearTimeout(idleT); queue.length = 0; setHead(-1);
+    if (master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.05); }
+  function sync() {
+    if (running()) { begin(); if (previewing) master.gain.setTargetAtTime(VOLUME, ctx.currentTime, 0.03); }
+    else if (ctx) halt();
+  }
+  function restartBar() { if (ctx && timer) { nextTime = ctx.currentTime + 0.05; step = 0; queue.length = 0; } }
   function onScroll() {
-    if (!on || !ctx) return;
+    if (!on || previewing || !ctx) return;
     master.gain.setTargetAtTime(VOLUME, ctx.currentTime, FADE_IN);
     clearTimeout(idleT);
-    idleT = setTimeout(() => master.gain.setTargetAtTime(0, ctx.currentTime, FADE_OUT), IDLE_MS);
+    idleT = setTimeout(() => { if (!previewing) master.gain.setTargetAtTime(0, ctx.currentTime, FADE_OUT); }, IDLE_MS);
+  }
+  function setPreview(v) {
+    previewing = v; playBtn.setAttribute("aria-pressed", String(v)); playBtn.innerHTML = v ? "&#9632; STOP" : "&#9654; PLAY";
+    if (v) { setStyle("custom"); sync(); } else { if (master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.05); sync(); }
+  }
+  function setStyle(name) {
+    styleName = name; styleBtn.textContent = "BEAT: " + STYLES[name].label; restartBar();
   }
 
   btn.addEventListener("click", () => {
     on = !on; btn.textContent = on ? "SOUND: ON" : "SOUND: OFF"; btn.setAttribute("aria-pressed", String(on));
-    if (on) { start(); onScroll(); } else stop();
+    sync(); if (on) onScroll();
   });
-  styleBtn.addEventListener("click", () => {
-    styleName = ORDER[(ORDER.indexOf(styleName) + 1) % ORDER.length];
-    styleBtn.textContent = "BEAT: " + STYLES[styleName].label;
-    if (on) { nextTime = ctx.currentTime + 0.05; step = 0; }       // restart the bar in the new style
+  styleBtn.addEventListener("click", () => setStyle(ORDER[(ORDER.indexOf(styleName) + 1) % ORDER.length]));
+  buildBtn.addEventListener("click", () => {
+    panel.hidden = !panel.hidden;
+    buildBtn.textContent = panel.hidden ? "BUILD" : "CLOSE"; buildBtn.setAttribute("aria-expanded", String(!panel.hidden));
+    if (!panel.hidden) { setStyle("custom"); kickFrame(); } else { if (previewing) setPreview(false); setHead(-1); }
+  });
+  panel.addEventListener("click", e => {
+    const pad = e.target.closest(".pad"), act = e.target.closest("[data-act]"), pre = e.target.closest("[data-preset]");
+    if (pad) { const r = pad.dataset.r, n = +pad.dataset.s; grid[r][n] = !grid[r][n]; paint(); save(); }
+    else if (act && act.dataset.act === "play") setPreview(!previewing);
+    else if (act && act.dataset.act === "clear") { ROWS.forEach(([id]) => grid[id].fill(false)); paint(); save(); }
+    else if (pre) { applyPreset(PRESETS[pre.dataset.preset]); }
+  });
+  panel.addEventListener("input", e => {
+    const k = e.target.dataset.k; if (!k) return; const v = +e.target.value;
+    cfg[k] = (k === "swing" || k === "wonk") ? v / 100 : v; paint(); save();
   });
   ["scroll", "wheel", "touchmove"].forEach(e => addEventListener(e, onScroll, { passive: true }));
-  document.addEventListener("visibilitychange", () => { if (!on) return; document.hidden ? stop() : start(); });
+  document.addEventListener("visibilitychange", () => {
+    if (!running()) return;
+    if (document.hidden) { clearInterval(timer); timer = null; if (master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.05); } else sync();
+  });
 })();
