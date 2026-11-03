@@ -90,9 +90,9 @@
   const NOTES = [[26, "D1"], [28, "E1"], [29, "F1"], [31, "G1"], [33, "A1"], [36, "C2"]];
   const evens = [0, 2, 4, 6, 8, 10, 12, 14], all = [...Array(16).keys()];
   const PRESETS = {
-    ROCK:  { bpm: 120, swing: 0,   wonk: 0.1, note: 28, rows: { kick: [0, 8, 10], snare: [4, 12], hat: evens, ohat: [14], bass: evens } },
-    TRAP:  { bpm: 140, swing: 0.1, wonk: 0,   note: 29, rows: { kick: [0, 6, 10], clap: [8], hat: evens, bass: [0, 6, 10] } },
-    PHONK: { bpm: 118, swing: 0.3, wonk: 0.7, note: 29, rows: { kick: [0, 8, 10], bass: [0], snare: [3, 6, 12, 14],
+    ROCK:  { bpm: 120, swing: 0,    wonk: 0.05, note: 28, rows: { kick: [0, 8, 10], snare: [4, 12], hat: evens, ohat: [14], bass: evens } },
+    TRAP:  { bpm: 140, swing: 0.07, wonk: 0,    note: 29, rows: { kick: [0, 6, 10], clap: [8], hat: evens, bass: [0, 6, 10] } },
+    PHONK: { bpm: 118, swing: 0.2,  wonk: 0.32, note: 29, rows: { kick: [0, 8, 10], bass: [0], snare: [3, 6, 12, 14],
                                                                 cowlo: [0, 3, 8], cowhi: [6, 14], tom: [2, 7, 10, 15] } },
   };
   const PRESET_NAMES = ["PHONK", "ROCK", "TRAP"], PRESET_OF = { phonk: "PHONK", rock: "ROCK", trap: "TRAP" };
@@ -102,7 +102,7 @@
   // Plays a 16-step pattern with swing + per-step "wonky" timing (shared by CUSTOM and BR PHONK)
   function playPattern(rows, p, c, out, buf, s, t) {
     const ST = 60 / p.bpm / 4, odd = s % 2 === 1;
-    const at = k => Math.max(t + (odd ? ST * 0.33 * p.swing : 0) + (FEEL[s] + (Math.random() * 2 - 1) * 8) * p.wonk * k / 1000, c.currentTime);
+    const at = k => Math.max(t + (odd ? ST * 0.5 * p.swing : 0) + (FEEL[s] + (Math.random() * 2 - 1) * 8) * 2.2 * p.wonk * k / 1000, c.currentTime);   // swing 100% = half a step late; wonk 100% = ~60ms of push/pull
     ROWS.forEach(([id]) => { if (rows[id][s]) V[id](c, out, at(id === "bass" ? 0.3 : 1), buf, p.note); });
   }
   STYLES.custom = { get bpm() { return cfg.bpm; }, label: "CUSTOM", play(c, out, buf, bar, s, t) { playPattern(grid, cfg, c, out, buf, s, t); } };
