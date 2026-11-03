@@ -117,8 +117,8 @@
   const row = document.createElement("div"); row.className = "sound-row";
   ui.append(panel, row); document.body.appendChild(ui);
   const mk = txt => { const b = document.createElement("button"); b.className = "sound-toggle"; b.type = "button"; b.textContent = txt; row.appendChild(b); return b; };
-  const btn = mk("SOUND: ON"), styleBtn = mk("BEAT: BR PHONK"), buildBtn = mk("REMIX");
-  btn.classList.add("sound-main"); btn.setAttribute("aria-pressed", "true"); buildBtn.setAttribute("aria-expanded", "false");
+  const btn = mk("SOUND: OFF"), styleBtn = mk("BEAT: BR PHONK"), buildBtn = mk("REMIX");
+  btn.setAttribute("aria-pressed", "false"); buildBtn.setAttribute("aria-expanded", "false");
 
   panel.innerHTML =
     '<div class="sampler-bar"><button type="button" class="sbtn" data-act="play" aria-pressed="false">&#9654; PLAY</button>' +
@@ -149,7 +149,7 @@
   applyPreset(PRESETS.PHONK);
 
   // ---- engine ----
-  let ctx, master, buf, timer = null, nextTime = 0, step = 0, on = true, previewing = false, idleT, raf = 0;   // sound starts ON (needs one tap/click to unlock, see below)
+  let ctx, master, buf, timer = null, nextTime = 0, step = 0, on = false, previewing = false, idleT, raf = 0;   // sound starts OFF: the SOUND button press is the tap browsers require
   let base = "phonk", remixed = false; const queue = [];
   const activeStyle = () => remixed ? "custom" : base;      // custom = the REMIX grid, used once you start editing
   const stepLen = () => 60 / STYLES[activeStyle()].bpm / 4;
@@ -230,15 +230,6 @@
     cfg[k] = (k === "swing" || k === "wonk") ? v / 100 : v; paint();
   });
   ["scroll", "wheel", "touchmove"].forEach(e => addEventListener(e, onScroll, { passive: true }));
-  // Sound is "on" from the start, but browsers only allow audio after a tap, click or key press.
-  // The first one anywhere on the page unlocks it; after that, scrolling plays the beat.
-  const UNLOCK = ["pointerdown", "pointerup", "touchend", "keydown", "click"];
-  const unlock = e => {
-    if (!on || (e.target.closest && e.target.closest(".sound-main"))) return;   // the SOUND button handles itself
-    sync();
-    if (ctx) ctx.resume().then(() => { if (ctx.state === "running") UNLOCK.forEach(t => removeEventListener(t, unlock, true)); });
-  };
-  UNLOCK.forEach(t => addEventListener(t, unlock, true));
   document.addEventListener("visibilitychange", () => {
     if (!running()) return;
     if (document.hidden) { clearInterval(timer); timer = null; if (master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.05); } else sync();
