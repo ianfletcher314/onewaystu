@@ -119,7 +119,7 @@
   const row = document.createElement("div"); row.className = "sound-row";
   ui.append(panel, row); document.body.appendChild(ui);
   const mk = txt => { const b = document.createElement("button"); b.className = "sound-toggle"; b.type = "button"; b.textContent = txt; row.appendChild(b); return b; };
-  const btn = mk("SOUND: OFF"), styleBtn = mk("BEAT: PHONK"), buildBtn = mk("MIX");
+  const btn = mk("MAKE A BEAT"), styleBtn = mk("BEAT: PHONK"), buildBtn = mk("MIX");
   btn.classList.add("sound-main"); btn.setAttribute("aria-pressed", "false"); buildBtn.setAttribute("aria-expanded", "false");
 
   panel.innerHTML =
@@ -192,7 +192,7 @@
   function halt() { clearInterval(timer); timer = null; queue.length = 0; setHead(-1);
     if (master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.05); }
   function paintPlay() { const a = audible(); playBtn.setAttribute("aria-pressed", String(a)); playBtn.innerHTML = a ? "&#9632; STOP" : "&#9654; PLAY"; }
-  function paintSound() { btn.textContent = on ? "SOUND: ON" : "SOUND: OFF"; btn.setAttribute("aria-pressed", String(on)); }
+  function paintSound() { btn.textContent = on ? "STOP BEAT" : "MAKE A BEAT"; btn.setAttribute("aria-pressed", String(on)); }
   function sync() {
     if (audible()) { begin(); master.gain.setTargetAtTime(VOLUME, ctx.currentTime, FADE_IN); }
     else if (ctx) halt();
