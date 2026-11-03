@@ -119,7 +119,10 @@
   const row = document.createElement("div"); row.className = "sound-row";
   ui.append(panel, row); document.body.appendChild(ui);
   const mk = txt => { const b = document.createElement("button"); b.className = "sound-toggle"; b.type = "button"; b.textContent = txt; row.appendChild(b); return b; };
-  const btn = mk("MAKE A BEAT"), styleBtn = mk("BEAT: PHONK"), buildBtn = mk("MIX");
+  const mkSelect = () => { const sel = document.createElement("select"); sel.className = "sound-toggle beat-select"; sel.setAttribute("aria-label", "Beat style");
+    ORDER.forEach(n => { const o = document.createElement("option"); o.value = n; o.textContent = STYLES[n].label; sel.appendChild(o); });
+    row.appendChild(sel); return sel; };
+  const btn = mk("MAKE A BEAT"), styleBtn = mkSelect(), buildBtn = mk("MIX");
   btn.classList.add("sound-main"); btn.setAttribute("aria-pressed", "false"); buildBtn.setAttribute("aria-expanded", "false");
 
   panel.innerHTML =
@@ -200,7 +203,7 @@
   }
   function restartBar() { if (ctx && timer) { nextTime = ctx.currentTime + 0.05; step = 0; queue.length = 0; } }
   function setBase(name) {                      // BEAT button: pick a built-in beat (resets any remix)
-    base = name; remixed = false; styleBtn.textContent = "BEAT: " + STYLES[name].label;
+    base = name; remixed = false; styleBtn.value = name;
     if (!panel.hidden) applyPreset(PRESETS[PRESET_OF[name]]);
     restartBar();
   }
@@ -214,7 +217,7 @@
     on = !on; if (on) paused = false;                 // turning sound on always starts the beat
     paintSound(); sync(); paintCTA();
   });
-  styleBtn.addEventListener("click", () => setBase(ORDER[(ORDER.indexOf(base) + 1) % ORDER.length]));
+  styleBtn.addEventListener("change", () => setBase(styleBtn.value));
   buildBtn.addEventListener("click", () => {
     panel.hidden = !panel.hidden;
     buildBtn.textContent = panel.hidden ? "MIX" : "CLOSE"; buildBtn.setAttribute("aria-expanded", String(!panel.hidden));

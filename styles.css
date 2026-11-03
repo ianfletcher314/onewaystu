@@ -115,3 +115,10 @@ figure .arrow { position:absolute; top:50%; height:auto; transform:translateY(-5
   .sampler-ctrl input[type="range"], .sampler-ctrl select { width:100%; min-width:0; }
   .sampler-ctrl output { text-align:right; }
 }
+
+/* Beat style picker: a select styled like the other buttons, with a caret to show it opens */
+.sound-toggle.beat-select { -webkit-appearance:none; appearance:none; border-radius:0; padding-right:2rem;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><polygon points='0,0 12,0 6,8' fill='black'/></svg>");
+  background-repeat:no-repeat; background-position:right .7rem center; background-size:12px 8px; }
+.sound-toggle.beat-select:hover, .sound-toggle.beat-select:focus-visible {
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'><polygon points='0,0 12,0 6,8' fill='white'/></svg>"); }
