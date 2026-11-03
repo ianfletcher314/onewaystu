@@ -37,7 +37,7 @@ table + .note { margin:1rem 0 0; }
 /* Photo swap: hard-stepped black slab with an accent leading edge */
 figure { position:relative; overflow:hidden; }
 figure::after { content:""; position:absolute; inset:0; background:var(--ink); border-right:12px solid var(--accent); transform:translateX(-101%); pointer-events:none; }
-figure.cover::after { animation:slab-in .5s steps(5, jump-end) forwards; }
-figure.uncover::after { transform:translateX(0); animation:slab-out .5s steps(5, jump-end) forwards; }
+figure.cover::after { animation:slab-in .25s steps(4, jump-end) forwards; }
+figure.uncover::after { transform:translateX(0); animation:slab-out .25s steps(4, jump-end) forwards; }
 @keyframes slab-in { from { transform:translateX(-101%); } to { transform:translateX(0); } }
 @keyframes slab-out { from { transform:translateX(0); } to { transform:translateX(101%); } }
