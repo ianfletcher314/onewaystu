@@ -33,3 +33,11 @@ table + .note { margin:1rem 0 0; }
 @keyframes blink { 0%,85% { fill:#fff; } 88%,94% { fill:#000; } 91%,97% { fill:#fff; } 100% { fill:#fff; } }
 @media (max-width:700px) { .hero-main { flex-direction:column; align-items:stretch; gap:0; } .hero-main h1 { margin-bottom:1.5rem; } }
 @media (prefers-reduced-motion:reduce) { .march, .blink { animation:none; } }
+
+/* Photo swap: hard-stepped black slab with an accent leading edge */
+figure { position:relative; overflow:hidden; }
+figure::after { content:""; position:absolute; inset:0; background:var(--ink); border-right:12px solid var(--accent); transform:translateX(-101%); pointer-events:none; }
+figure.cover::after { animation:slab-in .5s steps(5, jump-end) forwards; }
+figure.uncover::after { transform:translateX(0); animation:slab-out .5s steps(5, jump-end) forwards; }
+@keyframes slab-in { from { transform:translateX(-101%); } to { transform:translateX(0); } }
+@keyframes slab-out { from { transform:translateX(0); } to { transform:translateX(101%); } }
