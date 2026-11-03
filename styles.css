@@ -75,9 +75,9 @@ figure .arrow { position:absolute; top:50%; height:auto; transform:translateY(-5
 .sampler-ctrl input[type="range"] { width:100px; accent-color:var(--ink); }
 .sampler-ctrl select { font:inherit; border:2px solid var(--ink); background:var(--paper); }
 
-/* SOUND: OFF is a shiny, oozing rainbow blob so it reads as clickable; plain black/white once ON.
+/* The call-to-action button (SOUND while it's off, REMIX once sound is on) is a shiny, oozing rainbow blob so it reads as clickable.
    Layers: drifting colour blobs (radial gradients) + a glossy top highlight + a sheen that sweeps across. */
-.sound-main[aria-pressed="false"] {
+.sound-toggle.rainbow {
   position:relative; isolation:isolate; overflow:hidden; color:#000; text-shadow:0 1px 0 rgba(255,255,255,.65);
   background:
     radial-gradient(circle at 20% 30%, #ff2dd4 0, transparent 46%),
@@ -90,9 +90,9 @@ figure .arrow { position:absolute; top:50%; height:auto; transform:translateY(-5
   box-shadow:inset 0 -7px 10px rgba(0,0,0,.28), inset 0 3px 5px rgba(255,255,255,.75);
   animation:ooze 2.2s ease-in-out infinite alternate, huespin 3s linear infinite;
 }
-.sound-main[aria-pressed="false"]::before { content:""; position:absolute; z-index:-1; left:0; right:0; top:0; height:52%;
+.sound-toggle.rainbow::before { content:""; position:absolute; z-index:-1; left:0; right:0; top:0; height:52%;
   background:linear-gradient(rgba(255,255,255,.75), rgba(255,255,255,.06)); }
-.sound-main[aria-pressed="false"]::after { content:""; position:absolute; z-index:-1; top:0; bottom:0; left:0; width:45%;
+.sound-toggle.rainbow::after { content:""; position:absolute; z-index:-1; top:0; bottom:0; left:0; width:45%;
   background:linear-gradient(105deg, transparent 0, rgba(255,255,255,.9) 50%, transparent 100%);
   transform:translateX(-170%) skewX(-20deg); animation:sheen 1.6s ease-in-out infinite; }
 @keyframes ooze {
@@ -101,4 +101,4 @@ figure .arrow { position:absolute; top:50%; height:auto; transform:translateY(-5
   100% { background-position:40% 100%, 60% 100%,  0% 40%,    100% 70%,  0 0; } }
 @keyframes huespin { to { filter:hue-rotate(360deg); } }
 @keyframes sheen { 0%, 55% { transform:translateX(-170%) skewX(-20deg); } 100% { transform:translateX(330%) skewX(-20deg); } }
-@media (prefers-reduced-motion:reduce) { .sound-main[aria-pressed="false"], .sound-main[aria-pressed="false"]::after { animation:none; } }
+@media (prefers-reduced-motion:reduce) { .sound-toggle.rainbow, .sound-toggle.rainbow::after { animation:none; } }

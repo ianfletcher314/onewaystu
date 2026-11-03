@@ -208,15 +208,20 @@
   }
   function markRemixed() { if (!remixed) { remixed = true; restartBar(); } }      // from now on the grid is what plays
 
+  // Rainbow call-to-action: SOUND while it's off; REMIX once sound is on (and the panel is closed)
+  const paintCTA = () => { btn.classList.toggle("rainbow", !on); buildBtn.classList.toggle("rainbow", on && panel.hidden); };
+  paintCTA();
+
   btn.addEventListener("click", () => {
     on = !on; btn.textContent = on ? "SOUND: ON" : "SOUND: OFF"; btn.setAttribute("aria-pressed", String(on));
-    sync(); if (on) onScroll();
+    sync(); if (on) onScroll(); paintCTA();
   });
   styleBtn.addEventListener("click", () => setBase(ORDER[(ORDER.indexOf(base) + 1) % ORDER.length]));
   buildBtn.addEventListener("click", () => {
     panel.hidden = !panel.hidden;
     buildBtn.textContent = panel.hidden ? "REMIX" : "CLOSE"; buildBtn.setAttribute("aria-expanded", String(!panel.hidden));
     if (!panel.hidden) { applyPreset(PRESETS[PRESET_OF[base]]); kickFrame(); } else { if (previewing) setPreview(false); setHead(-1); }
+    paintCTA();
   });
   panel.addEventListener("click", e => {
     const pad = e.target.closest(".pad"), act = e.target.closest("[data-act]"), pre = e.target.closest("[data-preset]");
