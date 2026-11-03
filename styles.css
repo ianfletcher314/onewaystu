@@ -16,7 +16,7 @@ img { display:block; width:100%; aspect-ratio:4/3; object-fit:cover; }
 table { width:100%; border-collapse:collapse; border:var(--b); }
 th, td { border:var(--b); padding:.75rem; text-align:left; }
 th { background:var(--ink); color:var(--paper); text-transform:uppercase; }
-.note { margin-top:1rem; font-weight:700; }
+.note { margin:0 0 1rem; font-weight:700; }
 .accent { background:var(--accent); border-bottom:0; }
 .accent a { color:inherit; font-weight:700; font-size:1.5rem; }
 @media (max-width:600px) { .photos { grid-template-columns:1fr; } figure:nth-child(even) { transform:none; } th, td { padding:.5rem; } }
