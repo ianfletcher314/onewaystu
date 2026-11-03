@@ -7,7 +7,7 @@
 
   const curve = k => { const n = 1024, a = new Float32Array(n);
     for (let i = 0; i < n; i++) { const x = i / (n - 1) * 2 - 1; a[i] = Math.tanh(k * x); } return a; };
-  const SOFT = curve(2.2), HARD = curve(16);
+  const SOFT = curve(2.2), HARD = curve(40);
 
   const noiseBuf = c => { const b = c.createBuffer(1, c.sampleRate, c.sampleRate), d = b.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; };
@@ -48,9 +48,9 @@
                            tone(c, out, t, { type: "triangle", f0: 200, f1: 130, drop: 0.08, peak: 0.5, dur: 0.12 }); }
       if (s % 2 === 0 && !(bar === 1 && s >= 12)) hat(c, out, t, buf, s === 14 && bar === 0);
       if (bar === 0 && s === 0) burst(c, out, t, buf, { type: "highpass", freq: 5000, peak: 0.28, dur: 1.1 }); // crash
-      // heavily distorted bass, an octave down: eighth notes on E, climbing to G and A in the second bar
-      if (s % 2 === 0) { const n = (bar === 0 ? 40 : (s < 8 ? 40 : s < 12 ? 43 : 45)) - 12;   // an octave down
-        tone(c, out, t, { type: "sawtooth", f0: hz(n), peak: 0.28, dur: 0.22, shaper: HARD, lp: 1400 }); }
+      // fuzz bass, two octaves down from the original: eighth notes on E in bar 1, a semitone up (F) in bar 2
+      if (s % 2 === 0) { const n = (bar === 0 ? 40 : 41) - 24;
+        tone(c, out, t, { type: "sawtooth", f0: hz(n), peak: 0.25, dur: 0.22, shaper: HARD, lp: 1800 }); }
     } },
     trap: { bpm: 140, label: "808", play(c, out, buf, bar, s, t) {
       if (has([[0, 6, 10], [0, 5, 10, 14]][bar], s)) tone(c, out, t, { f0: 150, f1: 48, drop: 0.1, peak: 1, dur: 0.65, shaper: SOFT });
