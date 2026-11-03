@@ -28,6 +28,6 @@ table + .note { margin:1rem 0 0; }
 .march { animation:march 1.2s steps(5, jump-none) infinite; }
 .blink { animation:blink 2.4s steps(1, end) infinite; }
 @keyframes march { to { transform:translateX(200px); } }
-@keyframes blink { 0%,85% { fill:#ff3b00; } 88%,94% { fill:#fff; } 91%,97% { fill:#000; } 100% { fill:#ff3b00; } }
+@keyframes blink { 0%,85% { fill:#fff; } 88%,94% { fill:#000; } 91%,97% { fill:#fff; } 100% { fill:#fff; } }
 @media (max-width:700px) { .hero-main { flex-direction:column; align-items:stretch; gap:0; } .hero-main h1 { margin-bottom:1.5rem; } }
 @media (prefers-reduced-motion:reduce) { .march, .blink { animation:none; } }
