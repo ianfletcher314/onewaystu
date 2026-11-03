@@ -1,8 +1,8 @@
-// Scroll beat: a synthesized loop that fades in while the page scrolls and fades out
-// when scrolling stops. Browsers only allow sound after a tap/click, so it stays off
-// until the visitor presses the SOUND button once. The BEAT button switches style.
+// Beat player: a synthesized loop that plays continuously while SOUND is on, unless the
+// PLAY/STOP button in the REMIX panel has been pressed to stop it. Browsers only allow sound
+// after a tap/click, so it starts OFF and the SOUND press unlocks audio. BEAT switches style.
 (() => {
-  const VOLUME = 0.55, FADE_IN = 0.18, FADE_OUT = 0.22, IDLE_MS = 350;
+  const VOLUME = 0.55, FADE_IN = 0.15;
   const hz = n => 440 * Math.pow(2, (n - 69) / 12);          // MIDI note -> frequency
 
   const curve = k => { const n = 1024, a = new Float32Array(n);
@@ -149,17 +149,17 @@
   applyPreset(PRESETS.PHONK);
 
   // ---- engine ----
-  let ctx, master, buf, timer = null, nextTime = 0, step = 0, on = false, previewing = false, idleT, raf = 0;   // sound starts OFF: the SOUND button press is the tap browsers require
+  let ctx, master, buf, timer = null, nextTime = 0, step = 0, on = false, paused = false, raf = 0;   // sound starts OFF: the SOUND button press is the tap browsers require
   let base = "phonk", remixed = false; const queue = [];
   const activeStyle = () => remixed ? "custom" : base;      // custom = the REMIX grid, used once you start editing
   const stepLen = () => 60 / STYLES[activeStyle()].bpm / 4;
-  const running = () => on || previewing;
+  const audible = () => on && !paused;               // plays whenever SOUND is on, unless PLAY has been stopped
 
   function tick() {
     while (nextTime < ctx.currentTime + 0.12) {
       const s = step % 16;
       STYLES[activeStyle()].play(ctx, master, buf, Math.floor(step / 16) % 2, s, nextTime);
-      if (activeStyle() === "custom" && !panel.hidden) queue.push([nextTime, s]);
+      if (!panel.hidden) queue.push([nextTime, s]);          // playhead for the REMIX grid
       nextTime += stepLen(); step = (step + 1) % 32;
     }
   }
@@ -184,23 +184,16 @@
     if (!timer) { nextTime = ctx.currentTime + 0.05; step = 0; timer = setInterval(tick, 25); }
     kickFrame();
   }
-  function halt() { clearInterval(timer); timer = null; clearTimeout(idleT); queue.length = 0; setHead(-1);
+  function halt() { clearInterval(timer); timer = null; queue.length = 0; setHead(-1);
     if (master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.05); }
+  function paintPlay() { const a = audible(); playBtn.setAttribute("aria-pressed", String(a)); playBtn.innerHTML = a ? "&#9632; STOP" : "&#9654; PLAY"; }
+  function paintSound() { btn.textContent = on ? "SOUND: ON" : "SOUND: OFF"; btn.setAttribute("aria-pressed", String(on)); }
   function sync() {
-    if (running()) { begin(); if (previewing) master.gain.setTargetAtTime(VOLUME, ctx.currentTime, 0.03); }
+    if (audible()) { begin(); master.gain.setTargetAtTime(VOLUME, ctx.currentTime, FADE_IN); }
     else if (ctx) halt();
+    paintPlay();
   }
   function restartBar() { if (ctx && timer) { nextTime = ctx.currentTime + 0.05; step = 0; queue.length = 0; } }
-  function onScroll() {
-    if (!on || previewing || !ctx) return;
-    master.gain.setTargetAtTime(VOLUME, ctx.currentTime, FADE_IN);
-    clearTimeout(idleT);
-    idleT = setTimeout(() => { if (!previewing) master.gain.setTargetAtTime(0, ctx.currentTime, FADE_OUT); }, IDLE_MS);
-  }
-  function setPreview(v) {
-    previewing = v; playBtn.setAttribute("aria-pressed", String(v)); playBtn.innerHTML = v ? "&#9632; STOP" : "&#9654; PLAY";
-    if (v) { markRemixed(); sync(); } else { if (master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.05); sync(); }
-  }
   function setBase(name) {                      // BEAT button: pick a built-in beat (resets any remix)
     base = name; remixed = false; styleBtn.textContent = "BEAT: " + STYLES[name].label;
     if (!panel.hidden) applyPreset(PRESETS[PRESET_OF[name]]);
@@ -210,23 +203,25 @@
 
   // Rainbow call-to-action: SOUND while it's off; REMIX once sound is on (and the panel is closed)
   const paintCTA = () => { btn.classList.toggle("rainbow", !on); buildBtn.classList.toggle("rainbow", on && panel.hidden); };
-  paintCTA();
+  paintCTA(); paintPlay();
 
   btn.addEventListener("click", () => {
-    on = !on; btn.textContent = on ? "SOUND: ON" : "SOUND: OFF"; btn.setAttribute("aria-pressed", String(on));
-    sync(); if (on) onScroll(); paintCTA();
+    on = !on; if (on) paused = false;                 // turning sound on always starts the beat
+    paintSound(); sync(); paintCTA();
   });
   styleBtn.addEventListener("click", () => setBase(ORDER[(ORDER.indexOf(base) + 1) % ORDER.length]));
   buildBtn.addEventListener("click", () => {
     panel.hidden = !panel.hidden;
     buildBtn.textContent = panel.hidden ? "REMIX" : "CLOSE"; buildBtn.setAttribute("aria-expanded", String(!panel.hidden));
-    if (!panel.hidden) { applyPreset(PRESETS[PRESET_OF[base]]); kickFrame(); } else { if (previewing) setPreview(false); setHead(-1); }
+    if (!panel.hidden) { applyPreset(PRESETS[PRESET_OF[base]]); kickFrame(); } else { setHead(-1); }
     paintCTA();
   });
   panel.addEventListener("click", e => {
     const pad = e.target.closest(".pad"), act = e.target.closest("[data-act]"), pre = e.target.closest("[data-preset]");
     if (pad) { markRemixed(); const r = pad.dataset.r, n = +pad.dataset.s; grid[r][n] = !grid[r][n]; paint(); }
-    else if (act && act.dataset.act === "play") setPreview(!previewing);
+    else if (act && act.dataset.act === "play") {            // STOP pauses the beat; PLAY resumes it (and turns sound on if needed)
+      if (audible()) paused = true; else { paused = false; on = true; }
+      paintSound(); sync(); paintCTA(); }
     else if (act && act.dataset.act === "clear") { markRemixed(); ROWS.forEach(([id]) => grid[id].fill(false)); paint(); }
     else if (pre) { markRemixed(); applyPreset(PRESETS[pre.dataset.preset]); }
   });
@@ -234,9 +229,8 @@
     const k = e.target.dataset.k; if (!k) return; markRemixed(); const v = +e.target.value;
     cfg[k] = (k === "swing" || k === "wonk") ? v / 100 : v; paint();
   });
-  ["scroll", "wheel", "touchmove"].forEach(e => addEventListener(e, onScroll, { passive: true }));
   document.addEventListener("visibilitychange", () => {
-    if (!running()) return;
-    if (document.hidden) { clearInterval(timer); timer = null; if (master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.05); } else sync();
+    if (!audible()) return;
+    if (document.hidden) halt(); else sync();
   });
 })();
