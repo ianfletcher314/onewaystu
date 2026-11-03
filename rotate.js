@@ -24,11 +24,6 @@ const PHOTOS = [
   "assets/photos/IMG_6323.jpg",
   "assets/photos/IMG_6324.jpg",
   "assets/photos/IMG_6326.jpg",
-  "assets/photos/IMG_6327.jpg",
-  "assets/photos/IMG_6328.jpg",
-  "assets/photos/IMG_6329.jpg",
-  "assets/photos/IMG_6330.jpg",
-  "assets/photos/IMG_6332.jpg",
 ];
 const slots = [...document.querySelectorAll(".photos img")];
 PHOTOS.forEach(src => { new Image().src = src; });
