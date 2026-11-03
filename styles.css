@@ -25,7 +25,7 @@ th { background:var(--ink); color:var(--paper); text-transform:uppercase; }
 .note { margin:0 0 1rem; font-weight:700; }
 .accent { background:var(--ink); color:var(--paper); border-bottom:0; }
 .accent a { color:inherit; font-weight:700; font-size:1.5rem; }
-@media (max-width:767px) { figure:nth-child(even) { transform:none; } }
+@media (max-width:767px) { figure:nth-child(even) { transform:none; } .photos figure:nth-child(n+4) { display:none; } }
 @media (max-width:600px) { th, td { padding:.5rem; } }
 table + .note { margin:1rem 0 0; }
 
