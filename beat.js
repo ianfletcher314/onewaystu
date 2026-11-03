@@ -68,33 +68,6 @@
       if (s === 8) clap(c, out, t, buf);
       if (has([[0, 2, 4, 6, 8, 10, 12, 14], [0, 2, 4, 6, 8, 10, 12, 13, 14, 15]][bar], s)) hat(c, out, t, buf, false);
     } },
-    // Brazilian phonk: funk carioca-style groove (~130 BPM): kick-snare-snare, kick-snare on a 3-3-2 grid (kicks on steps 0 and 8,
-    // snares on 3, 6, 14; the snare that would land on step 11 is left out), cowbell lead, gliding distorted 808.
-    // Deliberately wonky: every step has its own push/pull (like a drummer's feel), plus wide random
-    // drift each loop, ghost taps on the low drum that come and go, and velocity changes.
-    phonk: { bpm: 130, label: "BR PHONK", play(c, out, buf, bar, s, t) {
-      const ST = 60 / 130 / 4;
-      const FEEL = [0, 14, -6, 24, 4, -8, 20, 10, 0, 18, -10, 28, 6, -5, 22, 12];   // ms push (+) / pull (-) per 16th
-      const j = ms => (Math.random() * 2 - 1) * ms / 1000;
-      const at = (scale, drift) => Math.max(t + FEEL[s] * scale / 1000 + j(drift), c.currentTime);
-      const vel = v => v * (0.75 + Math.random() * 0.5);
-      if (has([0, 8], s)) {                                         // kick on beats 1 and 3
-        const tk = at(0.6, 4);
-        tone(c, out, tk, { f0: 170, f1: 60, drop: 0.04, peak: vel(0.9), dur: 0.15, shaper: SOFT });
-        burst(c, out, tk, buf, { type: "lowpass", freq: 3500, peak: 0.35, dur: 0.012 });
-      }
-      if (has([2, 7, 10, 15], s) && Math.random() < 0.55)            // ghost taps: quiet low-drum hits that come and go
-        tone(c, out, at(1, 6), { f0: 115, f1: 85, drop: 0.06, peak: vel(0.3), dur: 0.1 });
-      if (has([3, 6, 14], s)) { const ts = at(1.2, 7) + 0.01;         // snares: kick-snare-snare, kick-(rest)-snare, lagging the beat
-        burst(c, out, ts, buf, { type: "bandpass", freq: 2200, q: 0.6, peak: vel(0.8), dur: 0.16 });
-        tone(c, out, ts, { type: "triangle", f0: 200, f1: 130, drop: 0.08, peak: vel(0.45), dur: 0.12 }); }
-      burst(c, out, at(1.4, 6), buf, { type: "highpass", freq: 8000, peak: vel(s % 2 === 0 ? 0.2 : 0.09), dur: 0.04 });   // loose 16th hats
-      const bass = { 0: 29, 8: 29 }; if (bar === 0) bass[14] = 27; else bass[11] = 25;   // 808 in F minor, slides into each note
-      if (s in bass) { const n = bass[s], tb = at(0.3, 3);
-        tone(c, out, tb, { f0: hz(n) * 2, f1: hz(n), drop: 0.07, peak: 0.85, dur: s === 0 || s === 8 ? 0.55 : 0.3, shaper: curve(5) }); }
-      const mel = bar === 0 ? { 0: 77, 3: 80, 6: 79, 8: 77, 11: 75 } : { 0: 77, 3: 80, 6: 84, 8: 80, 11: 79, 14: 77 };
-      if (s in mel) cowbell(c, out, at(1.6, 8) + 0.006, mel[s], vel(0.28));   // cowbell wanders the most
-    } },
   };
   // ---- sampler: build-your-own pattern (one bar of 16 steps) ----
   const BASS808 = curve(5);
@@ -102,7 +75,7 @@
   const V = {
     kick:  (c, o, t, b) => { tone(c, o, t, { f0: 150, f1: 55, drop: 0.05, peak: 1, dur: 0.3, shaper: SOFT });
                              burst(c, o, t, b, { type: "lowpass", freq: 3200, peak: 0.38, dur: 0.012 }); },
-    bass:  (c, o, t) => tone(c, o, t, { f0: hz(cfg.note) * 2, f1: hz(cfg.note), drop: 0.07, peak: 0.85, dur: 0.55, shaper: BASS808 }),
+    bass:  (c, o, t, b, note = cfg.note) => tone(c, o, t, { f0: hz(note) * 2, f1: hz(note), drop: 0.07, peak: 0.85, dur: 0.55, shaper: BASS808 }),
     snare: (c, o, t, b) => { burst(c, o, t, b, { type: "bandpass", freq: 2200, q: 0.6, peak: 0.85, dur: 0.17 });
                              tone(c, o, t, { type: "triangle", f0: 200, f1: 130, drop: 0.08, peak: 0.5, dur: 0.12 }); },
     clap:  (c, o, t, b) => clap(c, o, t, b),
@@ -125,11 +98,16 @@
   const FEEL = [0, 14, -6, 24, 4, -8, 20, 10, 0, 18, -10, 28, 6, -5, 22, 12];       // ms push/pull per 16th at WONK = 1
   const grid = {}; ROWS.forEach(([id]) => { grid[id] = new Array(16).fill(false); });
 
-  STYLES.custom = { get bpm() { return cfg.bpm; }, label: "CUSTOM", play(c, out, buf, bar, s, t) {
-    const ST = 60 / cfg.bpm / 4, odd = s % 2 === 1;
-    const at = k => Math.max(t + (odd ? ST * 0.33 * cfg.swing : 0) + (FEEL[s] + (Math.random() * 2 - 1) * 8) * cfg.wonk * k / 1000, c.currentTime);
-    ROWS.forEach(([id]) => { if (grid[id][s]) V[id](c, out, at(id === "bass" ? 0.3 : 1), buf); });
-  } };
+  // Plays a 16-step pattern with swing + per-step "wonky" timing (shared by CUSTOM and BR PHONK)
+  function playPattern(rows, p, c, out, buf, s, t) {
+    const ST = 60 / p.bpm / 4, odd = s % 2 === 1;
+    const at = k => Math.max(t + (odd ? ST * 0.33 * p.swing : 0) + (FEEL[s] + (Math.random() * 2 - 1) * 8) * p.wonk * k / 1000, c.currentTime);
+    ROWS.forEach(([id]) => { if (rows[id][s]) V[id](c, out, at(id === "bass" ? 0.3 : 1), buf, p.note); });
+  }
+  STYLES.custom = { get bpm() { return cfg.bpm; }, label: "CUSTOM", play(c, out, buf, bar, s, t) { playPattern(grid, cfg, c, out, buf, s, t); } };
+  // BR PHONK is the PHONK preset above, always (it does not follow edits made in the BUILD panel)
+  { const p = PRESETS.PHONK, rows = {}; ROWS.forEach(([id]) => { rows[id] = all.map(n => (p.rows[id] || []).includes(n)); });
+    STYLES.phonk = { bpm: p.bpm, label: "BR PHONK", play(c, out, buf, bar, s, t) { playPattern(rows, p, c, out, buf, s, t); } }; }
   const ORDER = ["rock", "trap", "phonk", "custom"];
 
   const save = () => { try { localStorage.setItem("owsu-pattern", JSON.stringify({ grid, cfg })); } catch (e) {} };
