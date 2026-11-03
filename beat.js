@@ -63,7 +63,7 @@
       if (s % 2 === 0) { const n = (bar === 0 ? 40 : 41) - 24;
         tone(c, out, t, { type: "sawtooth", f0: hz(n), peak: 0.25, dur: 0.22, shaper: HARD, lp: 1800 }); }
     } },
-    trap: { bpm: 140, label: "TRAP", play(c, out, buf, bar, s, t) {
+    trap: { bpm: 140, label: "808", play(c, out, buf, bar, s, t) {
       if (has([[0, 6, 10], [0, 6, 10, 14]][bar], s)) tone(c, out, t, { f0: 150, f1: 48, drop: 0.1, peak: 1, dur: 0.65, shaper: SOFT });
       if (s === 8) clap(c, out, t, buf);
       if (has([[0, 2, 4, 6, 8, 10, 12, 14], [0, 2, 4, 6, 8, 10, 12, 13, 14, 15]][bar], s)) hat(c, out, t, buf, false);
@@ -91,11 +91,10 @@
   const evens = [0, 2, 4, 6, 8, 10, 12, 14], all = [...Array(16).keys()];
   const PRESETS = {
     ROCK:  { bpm: 120, swing: 0,   wonk: 0.1, note: 28, rows: { kick: [0, 8, 10], snare: [4, 12], hat: evens, ohat: [14], bass: evens } },
-    TRAP:  { bpm: 140, swing: 0.1, wonk: 0,   note: 29, rows: { kick: [0, 6, 10], clap: [8], hat: evens, bass: [0, 6, 10] } },
+    "808": { bpm: 140, swing: 0.1, wonk: 0,   note: 29, rows: { kick: [0, 6, 10], clap: [8], hat: evens, bass: [0, 6, 10] } },
     PHONK: { bpm: 118, swing: 0.3, wonk: 0.7, note: 29, rows: { kick: [0, 8, 10], bass: [0], snare: [3, 6, 12, 14],
                                                                 cowlo: [0, 3, 8], cowhi: [6, 14], tom: [2, 7, 10, 15] } },
   };
-  const PRESET_NAMES = ["PHONK", "ROCK", "TRAP"], PRESET_OF = { phonk: "PHONK", rock: "ROCK", trap: "TRAP" };
   const FEEL = [0, 14, -6, 24, 4, -8, 20, 10, 0, 18, -10, 28, 6, -5, 22, 12];       // ms push/pull per 16th at WONK = 1
   const grid = {}; ROWS.forEach(([id]) => { grid[id] = new Array(16).fill(false); });
 
@@ -109,7 +108,13 @@
   // BR PHONK is the PHONK preset above, always (it does not follow edits made in the REMIX panel)
   { const p = PRESETS.PHONK, rows = {}; ROWS.forEach(([id]) => { rows[id] = all.map(n => (p.rows[id] || []).includes(n)); });
     STYLES.phonk = { bpm: p.bpm, label: "BR PHONK", play(c, out, buf, bar, s, t) { playPattern(rows, p, c, out, buf, s, t); } }; }
-  const ORDER = ["phonk", "rock", "trap"];
+  const ORDER = ["phonk", "rock", "trap", "custom"];
+
+  const save = () => { try { localStorage.setItem("owsu-pattern", JSON.stringify({ grid, cfg })); } catch (e) {} };
+  let hadSaved = false;
+  try { const d = JSON.parse(localStorage.getItem("owsu-pattern"));
+    if (d && d.grid) { hadSaved = true; ROWS.forEach(([id]) => { if (Array.isArray(d.grid[id])) grid[id] = d.grid[id].slice(0, 16).map(Boolean); }); Object.assign(cfg, d.cfg); }
+  } catch (e) {}
 
   // ---- UI ----
   const ui = document.createElement("div"); ui.className = "sound-ui";
@@ -123,7 +128,7 @@
   panel.innerHTML =
     '<div class="sampler-bar"><button type="button" class="sbtn" data-act="play" aria-pressed="false">&#9654; PLAY</button>' +
     '<button type="button" class="sbtn" data-act="clear">CLEAR</button><span class="slabel">LOAD:</span>' +
-    PRESET_NAMES.map(k => '<button type="button" class="sbtn" data-preset="' + k + '">' + k + '</button>').join("") + '</div>' +
+    Object.keys(PRESETS).map(k => '<button type="button" class="sbtn" data-preset="' + k + '">' + k + '</button>').join("") + '</div>' +
     '<div class="sgrid">' + ROWS.map(([id, label]) => '<div class="srow"><span class="slabel">' + label + '</span>' +
       all.map(n => '<button type="button" class="pad' + (n % 4 === 0 ? ' beat' : '') + '" data-r="' + id + '" data-s="' + n + '" aria-label="' + label + ' step ' + (n + 1) + '" aria-pressed="false"></button>').join("") + '</div>').join("") + '</div>' +
     '<div class="sampler-ctrl">' +
@@ -144,22 +149,21 @@
   function applyPreset(p) {
     ROWS.forEach(([id]) => { grid[id] = all.map(n => (p.rows[id] || []).includes(n)); });
     cfg.bpm = p.bpm; cfg.swing = p.swing; cfg.wonk = p.wonk; cfg.note = p.note;
-    paint();
+    paint(); save();
   }
-  applyPreset(PRESETS.PHONK);
+  if (!hadSaved) applyPreset(PRESETS.PHONK); else paint();     // first visit: start on the phonk pattern
 
   // ---- engine ----
   let ctx, master, buf, timer = null, nextTime = 0, step = 0, on = true, previewing = false, idleT, raf = 0;   // sound starts ON (needs one tap/click to unlock, see below)
-  let base = "phonk", remixed = false; const queue = [];
-  const activeStyle = () => remixed ? "custom" : base;      // custom = the REMIX grid, used once you start editing
-  const stepLen = () => 60 / STYLES[activeStyle()].bpm / 4;
+  let styleName = "phonk"; const queue = [];
+  const stepLen = () => 60 / STYLES[styleName].bpm / 4;
   const running = () => on || previewing;
 
   function tick() {
     while (nextTime < ctx.currentTime + 0.12) {
       const s = step % 16;
-      STYLES[activeStyle()].play(ctx, master, buf, Math.floor(step / 16) % 2, s, nextTime);
-      if (activeStyle() === "custom" && !panel.hidden) queue.push([nextTime, s]);
+      STYLES[styleName].play(ctx, master, buf, Math.floor(step / 16) % 2, s, nextTime);
+      if (styleName === "custom" && !panel.hidden) queue.push([nextTime, s]);
       nextTime += stepLen(); step = (step + 1) % 32;
     }
   }
@@ -199,35 +203,32 @@
   }
   function setPreview(v) {
     previewing = v; playBtn.setAttribute("aria-pressed", String(v)); playBtn.innerHTML = v ? "&#9632; STOP" : "&#9654; PLAY";
-    if (v) { markRemixed(); sync(); } else { if (master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.05); sync(); }
+    if (v) { setStyle("custom"); sync(); } else { if (master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.05); sync(); }
   }
-  function setBase(name) {                      // BEAT button: pick a built-in beat (resets any remix)
-    base = name; remixed = false; styleBtn.textContent = "BEAT: " + STYLES[name].label;
-    if (!panel.hidden) applyPreset(PRESETS[PRESET_OF[name]]);
-    restartBar();
+  function setStyle(name) {
+    styleName = name; styleBtn.textContent = "BEAT: " + STYLES[name].label; restartBar();
   }
-  function markRemixed() { if (!remixed) { remixed = true; restartBar(); } }      // from now on the grid is what plays
 
   btn.addEventListener("click", () => {
     on = !on; btn.textContent = on ? "SOUND: ON" : "SOUND: OFF"; btn.setAttribute("aria-pressed", String(on));
     sync(); if (on) onScroll();
   });
-  styleBtn.addEventListener("click", () => setBase(ORDER[(ORDER.indexOf(base) + 1) % ORDER.length]));
+  styleBtn.addEventListener("click", () => setStyle(ORDER[(ORDER.indexOf(styleName) + 1) % ORDER.length]));
   buildBtn.addEventListener("click", () => {
     panel.hidden = !panel.hidden;
     buildBtn.textContent = panel.hidden ? "REMIX" : "CLOSE"; buildBtn.setAttribute("aria-expanded", String(!panel.hidden));
-    if (!panel.hidden) { applyPreset(PRESETS[PRESET_OF[base]]); kickFrame(); } else { if (previewing) setPreview(false); setHead(-1); }
+    if (!panel.hidden) { setStyle("custom"); kickFrame(); } else { if (previewing) setPreview(false); setHead(-1); }
   });
   panel.addEventListener("click", e => {
     const pad = e.target.closest(".pad"), act = e.target.closest("[data-act]"), pre = e.target.closest("[data-preset]");
-    if (pad) { markRemixed(); const r = pad.dataset.r, n = +pad.dataset.s; grid[r][n] = !grid[r][n]; paint(); }
+    if (pad) { const r = pad.dataset.r, n = +pad.dataset.s; grid[r][n] = !grid[r][n]; paint(); save(); }
     else if (act && act.dataset.act === "play") setPreview(!previewing);
-    else if (act && act.dataset.act === "clear") { markRemixed(); ROWS.forEach(([id]) => grid[id].fill(false)); paint(); }
-    else if (pre) { markRemixed(); applyPreset(PRESETS[pre.dataset.preset]); }
+    else if (act && act.dataset.act === "clear") { ROWS.forEach(([id]) => grid[id].fill(false)); paint(); save(); }
+    else if (pre) { applyPreset(PRESETS[pre.dataset.preset]); }
   });
   panel.addEventListener("input", e => {
-    const k = e.target.dataset.k; if (!k) return; markRemixed(); const v = +e.target.value;
-    cfg[k] = (k === "swing" || k === "wonk") ? v / 100 : v; paint();
+    const k = e.target.dataset.k; if (!k) return; const v = +e.target.value;
+    cfg[k] = (k === "swing" || k === "wonk") ? v / 100 : v; paint(); save();
   });
   ["scroll", "wheel", "touchmove"].forEach(e => addEventListener(e, onScroll, { passive: true }));
   // Sound is "on" from the start, but browsers only allow audio after a tap, click or key press.
