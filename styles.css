@@ -105,3 +105,13 @@ figure .arrow { position:absolute; top:50%; height:auto; transform:translateY(-5
 @keyframes huespin { to { filter:hue-rotate(360deg); } }
 @keyframes sheen { 0%, 55% { transform:translateX(-170%) skewX(-20deg); } 100% { transform:translateX(330%) skewX(-20deg); } }
 @media (prefers-reduced-motion:reduce) { .sound-toggle.rainbow, .sound-toggle.rainbow::after { animation:none; } }
+
+/* Mobile: MIX panel controls in two equal columns: tempo / swing / wonk on the left, the three notes on the right */
+@media (max-width:767px) {
+  .sampler-ctrl { display:grid; grid-template-columns:1fr 1fr; grid-template-rows:repeat(3, auto); grid-auto-flow:column; gap:8px 14px; }
+  .sampler-ctrl label { min-width:0; display:grid; align-items:center; gap:6px; }
+  .sampler-ctrl label:nth-child(-n+3) { grid-template-columns:6ch 1fr 4ch; }      /* TEMPO / SWING / WONK: label, slider, value */
+  .sampler-ctrl label:nth-child(n+4) { grid-template-columns:8ch 1fr; }           /* 808 NOTE / COW LO / COW HI: label, dropdown */
+  .sampler-ctrl input[type="range"], .sampler-ctrl select { width:100%; min-width:0; }
+  .sampler-ctrl output { text-align:right; }
+}
