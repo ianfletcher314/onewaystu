@@ -37,6 +37,17 @@
     g.gain.setValueAtTime(0.7, t + 0.04); g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
     s.connect(f); f.connect(g); g.connect(o); s.start(t); s.stop(t + 0.25); };
 
+  // pitched cowbell: two detuned squares through a band-pass, the sound of the phonk lead
+  function cowbell(c, out, t, midi, peak = 0.3) {
+    const f = hz(midi), bp = c.createBiquadFilter(), g = c.createGain();
+    bp.type = "bandpass"; bp.frequency.value = f * 2.2; bp.Q.value = 1.1;
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.003);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    [f, f * 1.4815].forEach(freq => { const o = c.createOscillator(); o.type = "square"; o.frequency.value = freq;
+      o.connect(bp); o.start(t); o.stop(t + 0.25); });
+    bp.connect(g); g.connect(out);
+  }
+
   // ---- styles: 2 bars x 16 sixteenth-note steps ----
   const has = (a, s) => a.includes(s);
   const STYLES = {
@@ -57,8 +68,25 @@
       if (s === 8) clap(c, out, t, buf);
       if (has([[0, 2, 4, 6, 8, 10, 12, 14], [0, 2, 4, 6, 8, 10, 12, 13, 14, 15]][bar], s)) hat(c, out, t, buf, false);
     } },
+    // Brazilian phonk: funk carioca "tamborzao" 3-3-2 groove, cowbell lead, gliding distorted 808
+    phonk: { bpm: 130, label: "BR PHONK", play(c, out, buf, bar, s, t) {
+      if (has([0, 3, 8, 11], s)) {                      // tight kick on the 3-3-2 pattern
+        tone(c, out, t, { f0: 170, f1: 60, drop: 0.04, peak: 0.9, dur: 0.15, shaper: SOFT });
+        burst(c, out, t, buf, { type: "lowpass", freq: 3500, peak: 0.35, dur: 0.012 });
+      }
+      if (has([6, 14], s)) { clap(c, out, t, buf);      // the "ta" hits
+        burst(c, out, t, buf, { type: "bandpass", freq: 2600, q: 0.7, peak: 0.45, dur: 0.12 }); }
+      burst(c, out, t, buf, { type: "highpass", freq: 8000, peak: s % 2 === 0 ? 0.2 : 0.09, dur: 0.04 }); // 16th hats
+      // 808 bass in F minor: slides down into each note, heavily distorted
+      const bass = { 0: 29, 8: 29 }; if (bar === 0) bass[14] = 27; else bass[11] = 25;
+      if (s in bass) { const n = bass[s];
+        tone(c, out, t, { f0: hz(n) * 2, f1: hz(n), drop: 0.07, peak: 0.85, dur: s === 0 || s === 8 ? 0.55 : 0.3, shaper: curve(5) }); }
+      // cowbell melody (F minor)
+      const mel = bar === 0 ? { 0: 77, 3: 80, 6: 79, 8: 77, 11: 75 } : { 0: 77, 3: 80, 6: 84, 8: 80, 11: 79, 14: 77 };
+      if (s in mel) cowbell(c, out, t, mel[s], 0.28);
+    } },
   };
-  const ORDER = ["rock", "trap"];
+  const ORDER = ["rock", "trap", "phonk"];
 
   // ---- UI ----
   const ui = document.createElement("div"); ui.className = "sound-ui";
