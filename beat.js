@@ -68,8 +68,8 @@
       if (s === 8) clap(c, out, t, buf);
       if (has([[0, 2, 4, 6, 8, 10, 12, 14], [0, 2, 4, 6, 8, 10, 12, 13, 14, 15]][bar], s)) hat(c, out, t, buf, false);
     } },
-    // Brazilian phonk: funk carioca-style groove (~130 BPM): kick-snare-snare, kick-snare-snare on a 3-3-2 grid (kicks on steps 0 and 8,
-    // snares on 3, 6, 11, 14), cowbell lead, gliding distorted 808.
+    // Brazilian phonk: funk carioca-style groove (~130 BPM): kick-snare-snare, kick-snare on a 3-3-2 grid (kicks on steps 0 and 8,
+    // snares on 3, 6, 14; the snare that would land on step 11 is left out), cowbell lead, gliding distorted 808.
     // Deliberately wonky: every step has its own push/pull (like a drummer's feel), plus wide random
     // drift each loop, ghost taps on the low drum that come and go, and velocity changes.
     phonk: { bpm: 130, label: "BR PHONK", play(c, out, buf, bar, s, t) {
@@ -85,7 +85,7 @@
       }
       if (has([2, 7, 10, 15], s) && Math.random() < 0.55)            // ghost taps: quiet low-drum hits that come and go
         tone(c, out, at(1, 6), { f0: 115, f1: 85, drop: 0.06, peak: vel(0.3), dur: 0.1 });
-      if (has([3, 6, 11, 14], s)) { const ts = at(1.2, 7) + 0.01;     // snares: kick-snare-snare, kick-snare-snare, lagging the beat
+      if (has([3, 6, 14], s)) { const ts = at(1.2, 7) + 0.01;         // snares: kick-snare-snare, kick-(rest)-snare, lagging the beat
         burst(c, out, ts, buf, { type: "bandpass", freq: 2200, q: 0.6, peak: vel(0.8), dur: 0.16 });
         tone(c, out, ts, { type: "triangle", f0: 200, f1: 130, drop: 0.08, peak: vel(0.45), dur: 0.12 }); }
       burst(c, out, at(1.4, 6), buf, { type: "highpass", freq: 8000, peak: vel(s % 2 === 0 ? 0.2 : 0.09), dur: 0.04 });   // loose 16th hats
