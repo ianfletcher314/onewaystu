@@ -29,13 +29,33 @@ const slots = [...document.querySelectorAll(".photos img")];
 PHOTOS.forEach(src => { new Image().src = src; });
 
 if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
-  // Brutalist swap: an orange bar sweeps across the frame in hard steps;
-  // the photo cuts to the new one as the bar passes the middle.
+  // Brutalist swap: one arrow from the ONE WAY sign shoots across the frame in
+  // hard steps, leaving the new photo behind it.
+  const STEPS = 10, STEP_MS = 50, AW = 0.5; // AW = arrow width as a fraction of the frame
+  const NS = "http://www.w3.org/2000/svg";
   const swap = (img, src) => {
     const fig = img.closest("figure");
-    fig.classList.add("sweep");
-    setTimeout(() => { img.src = src; }, 250);
-    fig.addEventListener("animationend", () => fig.classList.remove("sweep"), { once: true });
+    const next = document.createElement("img");
+    next.src = src; next.alt = img.alt; next.className = "reveal";
+    const arrow = document.createElementNS(NS, "svg");
+    arrow.setAttribute("viewBox", "-6 -6 172 138");
+    arrow.setAttribute("class", "arrow");
+    arrow.style.width = AW * 100 + "%";
+    arrow.innerHTML = '<polygon points="0,34 100,34 100,0 160,63 100,126 100,92 0,92" fill="#ff3b00" stroke="#000" stroke-width="8" stroke-linejoin="miter"/>';
+    fig.append(next, arrow);
+    let k = 0;
+    const frame = () => {
+      const p = ++k / STEPS;
+      const x = -AW + p * (1 + AW);         // arrow's left edge, in frame widths
+      const tip = Math.min(1, x + AW);      // new photo shows up to the arrow tip
+      arrow.style.left = x * 100 + "%";
+      next.style.clipPath = `inset(0 ${(1 - tip) * 100}% 0 0)`;
+      if (k < STEPS) setTimeout(frame, STEP_MS);
+      else { img.src = src; next.remove(); arrow.remove(); }
+    };
+    arrow.style.left = -AW * 100 + "%";
+    next.style.clipPath = "inset(0 100% 0 0)";
+    setTimeout(frame, STEP_MS);
   };
   slots.forEach((img, i) => {
     const tick = () => {
