@@ -105,10 +105,10 @@
     ROWS.forEach(([id]) => { if (rows[id][s]) V[id](c, out, at(id === "bass" ? 0.3 : 1), buf, p.note); });
   }
   STYLES.custom = { get bpm() { return cfg.bpm; }, label: "CUSTOM", play(c, out, buf, bar, s, t) { playPattern(grid, cfg, c, out, buf, s, t); } };
-  // BR PHONK is the PHONK preset above, always (it does not follow edits made in the BUILD panel)
+  // BR PHONK is the PHONK preset above, always (it does not follow edits made in the REMIX panel)
   { const p = PRESETS.PHONK, rows = {}; ROWS.forEach(([id]) => { rows[id] = all.map(n => (p.rows[id] || []).includes(n)); });
     STYLES.phonk = { bpm: p.bpm, label: "BR PHONK", play(c, out, buf, bar, s, t) { playPattern(rows, p, c, out, buf, s, t); } }; }
-  const ORDER = ["rock", "trap", "phonk", "custom"];
+  const ORDER = ["phonk", "rock", "trap", "custom"];
 
   const save = () => { try { localStorage.setItem("owsu-pattern", JSON.stringify({ grid, cfg })); } catch (e) {} };
   let hadSaved = false;
@@ -122,8 +122,8 @@
   const row = document.createElement("div"); row.className = "sound-row";
   ui.append(panel, row); document.body.appendChild(ui);
   const mk = txt => { const b = document.createElement("button"); b.className = "sound-toggle"; b.type = "button"; b.textContent = txt; row.appendChild(b); return b; };
-  const btn = mk("SOUND: OFF"), styleBtn = mk("BEAT: ROCK"), buildBtn = mk("BUILD");
-  btn.setAttribute("aria-pressed", "false"); buildBtn.setAttribute("aria-expanded", "false");
+  const btn = mk("SOUND: ON"), styleBtn = mk("BEAT: BR PHONK"), buildBtn = mk("REMIX");
+  btn.classList.add("sound-main"); btn.setAttribute("aria-pressed", "true"); buildBtn.setAttribute("aria-expanded", "false");
 
   panel.innerHTML =
     '<div class="sampler-bar"><button type="button" class="sbtn" data-act="play" aria-pressed="false">&#9654; PLAY</button>' +
@@ -154,8 +154,8 @@
   if (!hadSaved) applyPreset(PRESETS.PHONK); else paint();     // first visit: start on the phonk pattern
 
   // ---- engine ----
-  let ctx, master, buf, timer = null, nextTime = 0, step = 0, on = false, previewing = false, idleT, raf = 0;
-  let styleName = "rock"; const queue = [];
+  let ctx, master, buf, timer = null, nextTime = 0, step = 0, on = true, previewing = false, idleT, raf = 0;   // sound starts ON (needs one tap/click to unlock, see below)
+  let styleName = "phonk"; const queue = [];
   const stepLen = () => 60 / STYLES[styleName].bpm / 4;
   const running = () => on || previewing;
 
@@ -216,7 +216,7 @@
   styleBtn.addEventListener("click", () => setStyle(ORDER[(ORDER.indexOf(styleName) + 1) % ORDER.length]));
   buildBtn.addEventListener("click", () => {
     panel.hidden = !panel.hidden;
-    buildBtn.textContent = panel.hidden ? "BUILD" : "CLOSE"; buildBtn.setAttribute("aria-expanded", String(!panel.hidden));
+    buildBtn.textContent = panel.hidden ? "REMIX" : "CLOSE"; buildBtn.setAttribute("aria-expanded", String(!panel.hidden));
     if (!panel.hidden) { setStyle("custom"); kickFrame(); } else { if (previewing) setPreview(false); setHead(-1); }
   });
   panel.addEventListener("click", e => {
@@ -231,6 +231,15 @@
     cfg[k] = (k === "swing" || k === "wonk") ? v / 100 : v; paint(); save();
   });
   ["scroll", "wheel", "touchmove"].forEach(e => addEventListener(e, onScroll, { passive: true }));
+  // Sound is "on" from the start, but browsers only allow audio after a tap, click or key press.
+  // The first one anywhere on the page unlocks it; after that, scrolling plays the beat.
+  const UNLOCK = ["pointerdown", "pointerup", "touchend", "keydown", "click"];
+  const unlock = e => {
+    if (!on || (e.target.closest && e.target.closest(".sound-main"))) return;   // the SOUND button handles itself
+    sync();
+    if (ctx) ctx.resume().then(() => { if (ctx.state === "running") UNLOCK.forEach(t => removeEventListener(t, unlock, true)); });
+  };
+  UNLOCK.forEach(t => addEventListener(t, unlock, true));
   document.addEventListener("visibilitychange", () => {
     if (!running()) return;
     if (document.hidden) { clearInterval(timer); timer = null; if (master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.05); } else sync();
