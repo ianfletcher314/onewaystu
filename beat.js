@@ -92,7 +92,7 @@
   const PRESETS = {
     ROCK:  { bpm: 120, swing: 0,    wonk: 0.05, note: 28, rows: { kick: [0, 8, 10], snare: [4, 12], hat: evens, ohat: [14], bass: evens } },
     TRAP:  { bpm: 140, swing: 0.07, wonk: 0,    note: 29, rows: { kick: [0, 6, 10], clap: [8], hat: evens, bass: [0, 6, 10] } },
-    PHONK: { bpm: 118, swing: 0.2,  wonk: 0.32, note: 29, rows: { kick: [0, 8, 10], bass: [0], snare: [3, 6, 12, 14],
+    PHONK: { bpm: 118, swing: 0.2,  wonk: 0.42, note: 29, rows: { kick: [0, 8, 15], bass: [0], snare: [3, 6, 10, 12],
                                                                 cowlo: [0, 3, 8], cowhi: [6, 14], tom: [2, 7, 10, 15] } },
   };
   const PRESET_NAMES = ["PHONK", "ROCK", "TRAP"], PRESET_OF = { phonk: "PHONK", rock: "ROCK", trap: "TRAP" };
