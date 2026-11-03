@@ -29,18 +29,13 @@ const slots = [...document.querySelectorAll(".photos img")];
 PHOTOS.forEach(src => { new Image().src = src; });
 
 if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
-  // Brutalist swap: a black slab with an orange edge slams across in hard steps,
-  // the photo changes while it covers the frame, then the slab exits the same way.
+  // Brutalist swap: an orange bar sweeps across the frame in hard steps;
+  // the photo cuts to the new one as the bar passes the middle.
   const swap = (img, src) => {
     const fig = img.closest("figure");
-    const done = () => { fig.classList.remove("cover", "uncover"); };
-    fig.addEventListener("animationend", function onCover() {
-      fig.removeEventListener("animationend", onCover);
-      img.src = src;
-      fig.classList.replace("cover", "uncover");
-      fig.addEventListener("animationend", done, { once: true });
-    }, { once: true });
-    fig.classList.add("cover");
+    fig.classList.add("sweep");
+    setTimeout(() => { img.src = src; }, 250);
+    fig.addEventListener("animationend", () => fig.classList.remove("sweep"), { once: true });
   };
   slots.forEach((img, i) => {
     const tick = () => {

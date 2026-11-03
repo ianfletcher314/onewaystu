@@ -34,10 +34,8 @@ table + .note { margin:1rem 0 0; }
 @media (max-width:700px) { .hero-main { flex-direction:column; align-items:stretch; gap:0; } .hero-main h1 { margin-bottom:1.5rem; } }
 @media (prefers-reduced-motion:reduce) { .march, .blink { animation:none; } }
 
-/* Photo swap: hard-stepped black slab with an accent leading edge */
+/* Photo swap: hard-stepped orange bar sweeping across the frame */
 figure { position:relative; overflow:hidden; }
-figure::after { content:""; position:absolute; inset:0; background:var(--ink); border-right:12px solid var(--accent); transform:translateX(-101%); pointer-events:none; }
-figure.cover::after { animation:slab-in .25s steps(4, jump-end) forwards; }
-figure.uncover::after { transform:translateX(0); animation:slab-out .25s steps(4, jump-end) forwards; }
-@keyframes slab-in { from { transform:translateX(-101%); } to { transform:translateX(0); } }
-@keyframes slab-out { from { transform:translateX(0); } to { transform:translateX(101%); } }
+figure::after { content:""; position:absolute; top:0; bottom:0; left:0; width:100%; border-right:12px solid var(--accent); transform:translateX(-101%); pointer-events:none; }
+figure.sweep::after { animation:sweep .5s steps(8, jump-end) forwards; }
+@keyframes sweep { from { transform:translateX(-101%); } to { transform:translateX(101%); } }
