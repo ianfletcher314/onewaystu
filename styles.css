@@ -20,3 +20,4 @@ th { background:var(--ink); color:var(--paper); text-transform:uppercase; }
 .accent { background:var(--accent); border-bottom:0; }
 .accent a { color:inherit; font-weight:700; font-size:1.5rem; }
 @media (max-width:600px) { .photos { grid-template-columns:1fr; } figure:nth-child(even) { transform:none; } th, td { padding:.5rem; } }
+table + .note { margin:1rem 0 0; }
