@@ -108,7 +108,7 @@
   STYLES.custom = { get bpm() { return cfg.bpm; }, label: "CUSTOM", play(c, out, buf, bar, s, t) { playPattern(grid, cfg, c, out, buf, s, t); } };
   // BR PHONK is the PHONK preset above, always (it does not follow edits made in the REMIX panel)
   { const p = PRESETS.PHONK, rows = {}; ROWS.forEach(([id]) => { rows[id] = all.map(n => (p.rows[id] || []).includes(n)); });
-    STYLES.phonk = { bpm: p.bpm, label: "BR PHONK", play(c, out, buf, bar, s, t) { playPattern(rows, p, c, out, buf, s, t); } }; }
+    STYLES.phonk = { bpm: p.bpm, label: "PHONK", play(c, out, buf, bar, s, t) { playPattern(rows, p, c, out, buf, s, t); } }; }
   const ORDER = ["phonk", "rock", "trap"];
 
   // ---- UI ----
@@ -117,7 +117,7 @@
   const row = document.createElement("div"); row.className = "sound-row";
   ui.append(panel, row); document.body.appendChild(ui);
   const mk = txt => { const b = document.createElement("button"); b.className = "sound-toggle"; b.type = "button"; b.textContent = txt; row.appendChild(b); return b; };
-  const btn = mk("SOUND: OFF"), styleBtn = mk("BEAT: BR PHONK"), buildBtn = mk("REMIX");
+  const btn = mk("SOUND: OFF"), styleBtn = mk("BEAT: PHONK"), buildBtn = mk("REMIX");
   btn.classList.add("sound-main"); btn.setAttribute("aria-pressed", "false"); buildBtn.setAttribute("aria-expanded", "false");
 
   panel.innerHTML =
