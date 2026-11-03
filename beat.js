@@ -71,28 +71,30 @@
   };
   // ---- sampler: build-your-own pattern (one bar of 16 steps) ----
   const BASS808 = curve(5);
-  const cfg = { bpm: 130, swing: 0, wonk: 0, note: 29 };          // swing / wonk are 0..1
+  const cfg = { bpm: 130, swing: 0, wonk: 0, note: 29, cowlo: 77, cowhi: 80 };          // swing / wonk are 0..1
   const V = {
     kick:  (c, o, t, b) => { tone(c, o, t, { f0: 150, f1: 55, drop: 0.05, peak: 1, dur: 0.3, shaper: SOFT });
                              burst(c, o, t, b, { type: "lowpass", freq: 3200, peak: 0.38, dur: 0.012 }); },
-    bass:  (c, o, t, b, note = cfg.note) => tone(c, o, t, { f0: hz(note) * 2, f1: hz(note), drop: 0.07, peak: 0.85, dur: 0.55, shaper: BASS808 }),
+    bass:  (c, o, t, b, p) => tone(c, o, t, { f0: hz(p.note) * 2, f1: hz(p.note), drop: 0.07, peak: 0.85, dur: 0.55, shaper: BASS808 }),
     snare: (c, o, t, b) => { burst(c, o, t, b, { type: "bandpass", freq: 2200, q: 0.6, peak: 0.85, dur: 0.17 });
                              tone(c, o, t, { type: "triangle", f0: 200, f1: 130, drop: 0.08, peak: 0.5, dur: 0.12 }); },
     clap:  (c, o, t, b) => clap(c, o, t, b),
     hat:   (c, o, t, b) => hat(c, o, t, b, false),
     ohat:  (c, o, t, b) => hat(c, o, t, b, true),
-    cowlo: (c, o, t) => cowbell(c, o, t, 77, 0.28),
-    cowhi: (c, o, t) => cowbell(c, o, t, 80, 0.28),
+    cowlo: (c, o, t, b, p) => cowbell(c, o, t, p.cowlo || 77, 0.28),
+    cowhi: (c, o, t, b, p) => cowbell(c, o, t, p.cowhi || 80, 0.28),
     tom:   (c, o, t) => tone(c, o, t, { f0: 115, f1: 85, drop: 0.06, peak: 0.5, dur: 0.12 }),
   };
   const ROWS = [["kick", "KICK"], ["bass", "808"], ["snare", "SNARE"], ["clap", "CLAP"], ["hat", "HAT"],
                 ["ohat", "OPEN HAT"], ["cowlo", "COW LO"], ["cowhi", "COW HI"], ["tom", "TOM"]];
   const NOTES = [[26, "D1"], [28, "E1"], [29, "F1"], [31, "G1"], [33, "A1"], [36, "C2"]];
+  const noteName = m => ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"][m % 12] + (Math.floor(m / 12) - 1);
+  const COW_NOTES = Array.from({ length: 25 }, (_, i) => [65 + i, noteName(65 + i)]);          // F4 .. F6
   const evens = [0, 2, 4, 6, 8, 10, 12, 14], all = [...Array(16).keys()];
   const PRESETS = {
     ROCK:  { bpm: 120, swing: 0,    wonk: 0.05, note: 28, rows: { kick: [0, 8, 10], snare: [4, 12], hat: evens, ohat: [14], bass: evens } },
     TRAP:  { bpm: 140, swing: 0.07, wonk: 0,    note: 29, rows: { kick: [0, 6, 10], clap: [8], hat: evens, bass: [0, 6, 10] } },
-    PHONK: { bpm: 118, swing: 0.2,  wonk: 0.42, note: 29, rows: { kick: [0, 8, 15], bass: [0], snare: [3, 6, 10, 12],
+    PHONK: { bpm: 118, swing: 0.2,  wonk: 0.42, note: 29, cowlo: 77, cowhi: 80, rows: { kick: [0, 8, 15], bass: [0], snare: [3, 6, 10, 12],
                                                                 cowlo: [0, 3, 8], cowhi: [6, 14], tom: [2, 7, 10, 15] } },
   };
   const PRESET_NAMES = ["PHONK", "ROCK", "TRAP"], PRESET_OF = { phonk: "PHONK", rock: "ROCK", trap: "TRAP" };
@@ -103,7 +105,7 @@
   function playPattern(rows, p, c, out, buf, s, t) {
     const ST = 60 / p.bpm / 4, odd = s % 2 === 1;
     const at = k => Math.max(t + (odd ? ST * 0.5 * p.swing : 0) + (FEEL[s] + (Math.random() * 2 - 1) * 8) * 2.2 * p.wonk * k / 1000, c.currentTime);   // swing 100% = half a step late; wonk 100% = ~60ms of push/pull
-    ROWS.forEach(([id]) => { if (rows[id][s]) V[id](c, out, at(id === "bass" ? 0.3 : 1), buf, p.note); });
+    ROWS.forEach(([id]) => { if (rows[id][s]) V[id](c, out, at(id === "bass" ? 0.3 : 1), buf, p); });
   }
   STYLES.custom = { get bpm() { return cfg.bpm; }, label: "CUSTOM", play(c, out, buf, bar, s, t) { playPattern(grid, cfg, c, out, buf, s, t); } };
   // BR PHONK is the PHONK preset above, always (it does not follow edits made in the REMIX panel)
@@ -130,7 +132,9 @@
     '<label>TEMPO <input type="range" min="80" max="180" data-k="bpm"><output data-o="bpm"></output></label>' +
     '<label>SWING <input type="range" min="0" max="100" data-k="swing"><output data-o="swing"></output></label>' +
     '<label>WONK <input type="range" min="0" max="100" data-k="wonk"><output data-o="wonk"></output></label>' +
-    '<label>808 NOTE <select data-k="note">' + NOTES.map(([m, n]) => '<option value="' + m + '">' + n + '</option>').join("") + '</select></label></div>';
+    '<label>808 NOTE <select data-k="note">' + NOTES.map(([m, n]) => '<option value="' + m + '">' + n + '</option>').join("") + '</select></label>' +
+    '<label>COW LO <select data-k="cowlo">' + COW_NOTES.map(([m, n]) => '<option value="' + m + '">' + n + '</option>').join("") + '</select></label>' +
+    '<label>COW HI <select data-k="cowhi">' + COW_NOTES.map(([m, n]) => '<option value="' + m + '">' + n + '</option>').join("") + '</select></label></div>';
 
   const playBtn = panel.querySelector('[data-act="play"]');
   const pct = k => Math.round(cfg[k] * 100);
@@ -140,10 +144,11 @@
     panel.querySelector('[data-k="swing"]').value = pct("swing"); panel.querySelector('[data-o="swing"]').textContent = pct("swing") + "%";
     panel.querySelector('[data-k="wonk"]').value = pct("wonk");   panel.querySelector('[data-o="wonk"]').textContent = pct("wonk") + "%";
     panel.querySelector('[data-k="note"]').value = cfg.note;
+    panel.querySelector('[data-k="cowlo"]').value = cfg.cowlo; panel.querySelector('[data-k="cowhi"]').value = cfg.cowhi;
   }
   function applyPreset(p) {
     ROWS.forEach(([id]) => { grid[id] = all.map(n => (p.rows[id] || []).includes(n)); });
-    cfg.bpm = p.bpm; cfg.swing = p.swing; cfg.wonk = p.wonk; cfg.note = p.note;
+    cfg.bpm = p.bpm; cfg.swing = p.swing; cfg.wonk = p.wonk; cfg.note = p.note; cfg.cowlo = p.cowlo || 77; cfg.cowhi = p.cowhi || 80;
     paint();
   }
   applyPreset(PRESETS.PHONK);
