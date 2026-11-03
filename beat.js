@@ -68,28 +68,31 @@
       if (s === 8) clap(c, out, t, buf);
       if (has([[0, 2, 4, 6, 8, 10, 12, 14], [0, 2, 4, 6, 8, 10, 12, 13, 14, 15]][bar], s)) hat(c, out, t, buf, false);
     } },
-    // Brazilian phonk: funk carioca "tamborzao" 3-3-2 groove, cowbell lead, gliding distorted 808.
-    // Notes are pushed slightly off the grid (swung off-16ths, laid-back clap and cowbell, tiny
-    // random jitter and velocity changes) so it feels played, not programmed.
+    // Brazilian phonk: funk carioca-style groove (~130 BPM), cowbell lead, gliding distorted 808.
+    // Deliberately wonky: every step has its own push/pull (like a drummer's feel), plus wide random
+    // drift each loop, ghost taps on the low drum that come and go, and velocity changes.
     phonk: { bpm: 130, label: "BR PHONK", play(c, out, buf, bar, s, t) {
-      const ST = 60 / 130 / 4, odd = s % 2 === 1;
-      const j = ms => (Math.random() * 2 - 1) * ms / 1000;          // +/- ms of jitter
-      const at = off => Math.max(t + off, c.currentTime);           // never schedule in the past
-      const vel = v => v * (0.8 + Math.random() * 0.4);              // +/- 20% velocity
-      if (has([0, 3, 8, 11], s)) {                                  // tight kick, odd steps a touch late
-        const tk = at((odd ? ST * 0.12 : 0) + j(1.5));
+      const ST = 60 / 130 / 4;
+      const FEEL = [0, 14, -6, 24, 4, -8, 20, 10, 0, 18, -10, 28, 6, -5, 22, 12];   // ms push (+) / pull (-) per 16th
+      const j = ms => (Math.random() * 2 - 1) * ms / 1000;
+      const at = (scale, drift) => Math.max(t + FEEL[s] * scale / 1000 + j(drift), c.currentTime);
+      const vel = v => v * (0.75 + Math.random() * 0.5);
+      if (has([0, 3, 8, 11], s)) {                                  // main low hits
+        const tk = at(0.6, 4);
         tone(c, out, tk, { f0: 170, f1: 60, drop: 0.04, peak: vel(0.9), dur: 0.15, shaper: SOFT });
         burst(c, out, tk, buf, { type: "lowpass", freq: 3500, peak: 0.35, dur: 0.012 });
       }
-      if (has([6, 14], s)) { const tc = at(0.014 + j(3));             // clap sits behind the beat
+      if (has([2, 7, 10, 15], s) && Math.random() < 0.55)            // ghost taps: quiet low-drum hits that come and go
+        tone(c, out, at(1, 6), { f0: 115, f1: 85, drop: 0.06, peak: vel(0.3), dur: 0.1 });
+      if (has([6, 14], s)) { const tc = at(1.2, 7) + 0.012;           // claps lag the beat
         clap(c, out, tc, buf);
         burst(c, out, tc, buf, { type: "bandpass", freq: 2600, q: 0.7, peak: 0.45, dur: 0.12 }); }
-      burst(c, out, at((odd ? ST * 0.22 : 0) + j(3)), buf, { type: "highpass", freq: 8000, peak: vel(s % 2 === 0 ? 0.2 : 0.09), dur: 0.04 }); // swung 16th hats
+      burst(c, out, at(1.4, 6), buf, { type: "highpass", freq: 8000, peak: vel(s % 2 === 0 ? 0.2 : 0.09), dur: 0.04 });   // loose 16th hats
       const bass = { 0: 29, 8: 29 }; if (bar === 0) bass[14] = 27; else bass[11] = 25;   // 808 in F minor, slides into each note
-      if (s in bass) { const n = bass[s], tb = at(j(1));
+      if (s in bass) { const n = bass[s], tb = at(0.3, 3);
         tone(c, out, tb, { f0: hz(n) * 2, f1: hz(n), drop: 0.07, peak: 0.85, dur: s === 0 || s === 8 ? 0.55 : 0.3, shaper: curve(5) }); }
       const mel = bar === 0 ? { 0: 77, 3: 80, 6: 79, 8: 77, 11: 75 } : { 0: 77, 3: 80, 6: 84, 8: 80, 11: 79, 14: 77 };
-      if (s in mel) cowbell(c, out, at(0.008 + (odd ? ST * 0.15 : 0) + j(3)), mel[s], vel(0.28));   // cowbell lags a hair
+      if (s in mel) cowbell(c, out, at(1.6, 8) + 0.006, mel[s], vel(0.28));   // cowbell wanders the most
     } },
   };
   const ORDER = ["rock", "trap", "phonk"];
