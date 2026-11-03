@@ -74,3 +74,8 @@ figure .arrow { position:absolute; top:50%; height:auto; transform:translateY(-5
 .sampler-ctrl label { display:flex; gap:6px; align-items:center; font-weight:700; }
 .sampler-ctrl input[type="range"] { width:100px; accent-color:var(--ink); }
 .sampler-ctrl select { font:inherit; border:2px solid var(--ink); background:var(--paper); }
+
+/* SOUND: OFF cycles through rainbow colours in hard steps so it reads as clickable; plain black/white once ON */
+.sound-main[aria-pressed="false"] { animation:rainbow 2.1s step-end infinite; }
+@keyframes rainbow { 0% { background:#ff3b30; } 14.3% { background:#ff9500; } 28.6% { background:#ffe600; } 42.9% { background:#34c759; } 57.2% { background:#00c7ff; } 71.5% { background:#7a78ff; } 85.8% { background:#ff2dd4; } 100% { background:#ff3b30; } }
+@media (prefers-reduced-motion:reduce) { .sound-main[aria-pressed="false"] { animation:none; background:#ffe600; } }

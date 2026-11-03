@@ -118,7 +118,7 @@
   ui.append(panel, row); document.body.appendChild(ui);
   const mk = txt => { const b = document.createElement("button"); b.className = "sound-toggle"; b.type = "button"; b.textContent = txt; row.appendChild(b); return b; };
   const btn = mk("SOUND: OFF"), styleBtn = mk("BEAT: BR PHONK"), buildBtn = mk("REMIX");
-  btn.setAttribute("aria-pressed", "false"); buildBtn.setAttribute("aria-expanded", "false");
+  btn.classList.add("sound-main"); btn.setAttribute("aria-pressed", "false"); buildBtn.setAttribute("aria-expanded", "false");
 
   panel.innerHTML =
     '<div class="sampler-bar"><button type="button" class="sbtn" data-act="play" aria-pressed="false">&#9654; PLAY</button>' +
