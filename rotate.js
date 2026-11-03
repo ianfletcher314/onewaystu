@@ -12,8 +12,8 @@ if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
       const shown = slots.map(s => s.getAttribute("src"));
       const options = PHOTOS.filter(p => !shown.includes(p));
       if (options.length) img.src = options[Math.floor(Math.random() * options.length)];
-      setTimeout(tick, 2500 + Math.random() * 3000);
+      setTimeout(tick, 13000 + Math.random() * 4000);
     };
-    setTimeout(tick, 1000 + i * 900); // staggered start
+    setTimeout(tick, 3000 + i * 3500); // staggered start
   });
 }
