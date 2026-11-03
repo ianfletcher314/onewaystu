@@ -41,7 +41,8 @@ if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
     arrow.setAttribute("viewBox", "-6 -6 172 138");
     arrow.setAttribute("class", "arrow");
     arrow.style.width = AW * 100 + "%";
-    arrow.innerHTML = '<polygon points="0,34 100,34 100,0 160,63 100,126 100,92 0,92" fill="#ff3b00" stroke="#000" stroke-width="8" stroke-linejoin="miter"/>';
+    arrow.innerHTML = '<polygon points="0,34 100,34 100,0 160,63 100,126 100,92 0,92" fill="#fff" stroke="#000" stroke-width="8" stroke-linejoin="miter"/>' +
+      '<text x="50" y="63" text-anchor="middle" dominant-baseline="central" font-family="Archivo Black, sans-serif" font-size="36" fill="#000">ONE</text>';
     fig.append(next, arrow);
     let k = 0;
     const frame = () => {
