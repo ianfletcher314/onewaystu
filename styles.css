@@ -24,6 +24,9 @@ th, td { border:var(--b); padding:.75rem; text-align:left; }
 th { background:var(--ink); color:var(--paper); text-transform:uppercase; }
 .note { margin:0 0 1rem; font-weight:700; }
 .accent { background:var(--ink); color:var(--paper); border-bottom:0; }
+/* leave room at the very bottom so the fixed sound buttons never cover the email/address */
+.accent { padding-bottom:calc(clamp(1rem,4vw,2.5rem) + 5rem); }
+@media (max-width:767px) { .accent { padding-bottom:calc(clamp(1rem,4vw,2.5rem) + 7rem); } }
 .accent a { color:inherit; font-weight:700; font-size:1.5rem; }
 @media (max-width:767px) { figure:nth-child(even) { transform:none; } .photos figure:nth-child(n+4) { display:none; } }
 @media (max-width:600px) { th, td { padding:.5rem; } }

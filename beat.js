@@ -117,7 +117,7 @@
   const row = document.createElement("div"); row.className = "sound-row";
   ui.append(panel, row); document.body.appendChild(ui);
   const mk = txt => { const b = document.createElement("button"); b.className = "sound-toggle"; b.type = "button"; b.textContent = txt; row.appendChild(b); return b; };
-  const btn = mk("SOUND: OFF"), styleBtn = mk("BEAT: PHONK"), buildBtn = mk("REMIX");
+  const btn = mk("SOUND: OFF"), styleBtn = mk("BEAT: PHONK"), buildBtn = mk("MIX");
   btn.classList.add("sound-main"); btn.setAttribute("aria-pressed", "false"); buildBtn.setAttribute("aria-expanded", "false");
 
   panel.innerHTML =
@@ -212,7 +212,7 @@
   styleBtn.addEventListener("click", () => setBase(ORDER[(ORDER.indexOf(base) + 1) % ORDER.length]));
   buildBtn.addEventListener("click", () => {
     panel.hidden = !panel.hidden;
-    buildBtn.textContent = panel.hidden ? "REMIX" : "CLOSE"; buildBtn.setAttribute("aria-expanded", String(!panel.hidden));
+    buildBtn.textContent = panel.hidden ? "MIX" : "CLOSE"; buildBtn.setAttribute("aria-expanded", String(!panel.hidden));
     if (!panel.hidden) { applyPreset(PRESETS[PRESET_OF[base]]); kickFrame(); } else { setHead(-1); }
     paintCTA();
   });
