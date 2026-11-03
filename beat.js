@@ -68,7 +68,8 @@
       if (s === 8) clap(c, out, t, buf);
       if (has([[0, 2, 4, 6, 8, 10, 12, 14], [0, 2, 4, 6, 8, 10, 12, 13, 14, 15]][bar], s)) hat(c, out, t, buf, false);
     } },
-    // Brazilian phonk: funk carioca-style groove (~130 BPM), cowbell lead, gliding distorted 808.
+    // Brazilian phonk: funk carioca-style groove (~130 BPM): kick-snare-snare, kick-snare-snare on a 3-3-2 grid (kicks on steps 0 and 8,
+    // snares on 3, 6, 11, 14), cowbell lead, gliding distorted 808.
     // Deliberately wonky: every step has its own push/pull (like a drummer's feel), plus wide random
     // drift each loop, ghost taps on the low drum that come and go, and velocity changes.
     phonk: { bpm: 130, label: "BR PHONK", play(c, out, buf, bar, s, t) {
@@ -77,16 +78,16 @@
       const j = ms => (Math.random() * 2 - 1) * ms / 1000;
       const at = (scale, drift) => Math.max(t + FEEL[s] * scale / 1000 + j(drift), c.currentTime);
       const vel = v => v * (0.75 + Math.random() * 0.5);
-      if (has([0, 3, 8, 11], s)) {                                  // main low hits
+      if (has([0, 8], s)) {                                         // kick on beats 1 and 3
         const tk = at(0.6, 4);
         tone(c, out, tk, { f0: 170, f1: 60, drop: 0.04, peak: vel(0.9), dur: 0.15, shaper: SOFT });
         burst(c, out, tk, buf, { type: "lowpass", freq: 3500, peak: 0.35, dur: 0.012 });
       }
       if (has([2, 7, 10, 15], s) && Math.random() < 0.55)            // ghost taps: quiet low-drum hits that come and go
         tone(c, out, at(1, 6), { f0: 115, f1: 85, drop: 0.06, peak: vel(0.3), dur: 0.1 });
-      if (has([6, 14], s)) { const tc = at(1.2, 7) + 0.012;           // claps lag the beat
-        clap(c, out, tc, buf);
-        burst(c, out, tc, buf, { type: "bandpass", freq: 2600, q: 0.7, peak: 0.45, dur: 0.12 }); }
+      if (has([3, 6, 11, 14], s)) { const ts = at(1.2, 7) + 0.01;     // snares: kick-snare-snare, kick-snare-snare, lagging the beat
+        burst(c, out, ts, buf, { type: "bandpass", freq: 2200, q: 0.6, peak: vel(0.8), dur: 0.16 });
+        tone(c, out, ts, { type: "triangle", f0: 200, f1: 130, drop: 0.08, peak: vel(0.45), dur: 0.12 }); }
       burst(c, out, at(1.4, 6), buf, { type: "highpass", freq: 8000, peak: vel(s % 2 === 0 ? 0.2 : 0.09), dur: 0.04 });   // loose 16th hats
       const bass = { 0: 29, 8: 29 }; if (bar === 0) bass[14] = 27; else bass[11] = 25;   // 808 in F minor, slides into each note
       if (s in bass) { const n = bass[s], tb = at(0.3, 3);
