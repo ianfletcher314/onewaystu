@@ -119,8 +119,8 @@
   const PRESETS = {
     ROCK:  { bpm: 120, swing: 0,   wonk: 0.1, note: 28, rows: { kick: [0, 8, 10], snare: [4, 12], hat: evens, ohat: [14], bass: evens } },
     "808": { bpm: 140, swing: 0.1, wonk: 0,   note: 29, rows: { kick: [0, 6, 10], clap: [8], hat: evens, bass: [0, 6, 10] } },
-    PHONK: { bpm: 130, swing: 0.3, wonk: 0.7, note: 29, rows: { kick: [0, 8], snare: [3, 6, 14], hat: all, bass: [0, 8, 12],
-                                                                cowlo: [0, 8], cowhi: [3, 6, 11], tom: [2, 7, 10, 15] } },
+    PHONK: { bpm: 118, swing: 0.3, wonk: 0.7, note: 29, rows: { kick: [0, 8, 10], bass: [0], snare: [3, 6, 12, 14],
+                                                                cowlo: [0, 3, 8], cowhi: [6, 14], tom: [2, 7, 10, 15] } },
   };
   const FEEL = [0, 14, -6, 24, 4, -8, 20, 10, 0, 18, -10, 28, 6, -5, 22, 12];       // ms push/pull per 16th at WONK = 1
   const grid = {}; ROWS.forEach(([id]) => { grid[id] = new Array(16).fill(false); });
@@ -173,7 +173,7 @@
     cfg.bpm = p.bpm; cfg.swing = p.swing; cfg.wonk = p.wonk; cfg.note = p.note;
     paint(); save();
   }
-  if (!hadSaved) applyPreset(PRESETS["808"]); else paint();
+  if (!hadSaved) applyPreset(PRESETS.PHONK); else paint();     // first visit: start on the phonk pattern
 
   // ---- engine ----
   let ctx, master, buf, timer = null, nextTime = 0, step = 0, on = false, previewing = false, idleT, raf = 0;
